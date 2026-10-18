@@ -1,3 +1,4 @@
+import { authorName } from "../../utils/author";
 import { useSelector } from "react-redux";
 import { displayNews } from "../../feature/reducers/newsSlice";
 import { displayUsers } from "../../feature/reducers/userSlice";
@@ -69,7 +70,7 @@ const TopNewsCardSlider = () => {
                   <div className="pt-2">
                     <ShowTime timestamp={newsItem.createdAt} />
                     <span className="flex text-[10px] text-SECONDARY_GRAY pt-2">
-                      Authour : {user?.firstName} {user?.lastName}
+                      Authour : {authorName(user)}
                     </span>
                   </div>
                 </div>

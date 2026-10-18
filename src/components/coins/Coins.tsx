@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { FaRegStar } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { displayCoins, setCoinId } from "../../feature/reducers/coinSlice";
@@ -6,7 +7,6 @@ import Chart from "chart.js/auto";
 import { useNavigate } from "react-router-dom";
 import { ICoin } from "../../interface";
 import Pagination from "../pagination/Pgination";
-import { RootState } from "../../feature/store";
 import Spinner from "../Spinner";
 
 interface ICoinProps {
@@ -16,7 +16,6 @@ interface ICoinProps {
 const Coins = ({ hasPagination }: ICoinProps) => {
   const coins = useSelector(displayCoins);
   const chartRefs = useRef<HTMLCanvasElement[]>([]);
-  const { isDarkMode } = useSelector((state: RootState) => state.app);
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 10; // Number of items per page
   const totalItems = coins.length - 1;
@@ -112,43 +111,38 @@ const Coins = ({ hasPagination }: ICoinProps) => {
     });
   }, [coins, currentPage, perPage, totalItems]);
 
+  const { t } = useTranslation();
   return (
     <div
-      className={` w-full mt-4 px-4 font-FONT_VIGA py-6 rounded-lg ${
-        isDarkMode ? "bg-SECONDARY_BLACK" : "bg-SECONDARY_WHITE"
-      } `}
+      className="w-full font-FONT_VIGA"
     >
-      <div className="flex items-center justify-between pb-14">
-        <h2 className=" text-sm font-semibold sm:text-2xl">Market Update</h2>
+      <div className="section-head mb-4">
+        <h2>{t("market.update")}</h2>
 
         <button
           onClick={() => navigate("/coin")}
-          className={`bg-PRIMARY_BLUE text-xs px-2 py-1 sm:text-base sm:py-2 sm:px-4  rounded-full text-PRIMARY_WHITE ${
+          className={`text-[15px] muted hover:text-PRIMARY_ORANGE ${
             hasPagination ? "hidden" : "flex"
           }`}
         >
-          View All
+          {t("market.viewAll")}
         </button>
       </div>
 
       <div>
-        <div className="coin-header-table pt-2 pb-4 border-b-2">
+        <div className="coin-header-table pt-2 pb-3 border-b border-[var(--line)] muted">
           <span className="col-span-1"></span>
           <span className="col-span-1">#</span>
-          <span className="coin-table">Name</span>
-          <span className="coin-table">Price</span>
+          <span className="coin-table">{t("market.name")}</span>
+          <span className="coin-table">{t("market.price")}</span>
           <span className="coin-table">24h %</span>
-          <span className="hidden lg:block coin-table">Market Cap</span>
-          <span className="hidden sm:block coin-table">Chart</span>
+          <span className="hidden lg:block coin-table">{t("market.marketCap")}</span>
+          <span className="hidden sm:block coin-table">{t("market.chart")}</span>
         </div>
         {coins.length === 0 && <Spinner />}
         {coins.slice(startIndex, endIndex).map((coin, index) => (
           <div
-            className={` transition-all border-b-2 last:border-none py-6 sm:py-5  duration-300  ${
-              isDarkMode
-                ? "  hover:bg-gradient-to-r from-blue-900 to-SECONDARY_BLACK"
-                 : "hover:bg-gradient-to-tr from-blue-200 to-LIGHT_BLUE"
-            }`}
+            className="transition-colors border-b border-[var(--line)] last:border-none py-5 duration-200 hover:bg-[var(--hover)]"
             key={coin._id}
           >
             {/* <div className=" border-b " /> */}
@@ -171,7 +165,7 @@ const Coins = ({ hasPagination }: ICoinProps) => {
                 <span className="hidden text-SECONDARY_GRAY lg:block">{`(${coin?.symbol})`}</span>
               </div>
               <span className="coin-table">
-                {coin?.current_price.toLocaleString(undefined, {
+                {coin?.current_price?.toLocaleString(undefined, {
                   maximumFractionDigits: 3,
                 })}
                 {"$"}
@@ -179,17 +173,17 @@ const Coins = ({ hasPagination }: ICoinProps) => {
               <span
                 className={`coin-table ${
                   coin!.market_cap_change_24h > 0
-                    ? "text-green-500"
-                    : "text-red-500"
+                    ? "text-SECONDARY_GREEN"
+                    : "text-SECONDARY_RED"
                 }`}
               >
-                {coin?.market_cap_change_percentage_24h.toLocaleString(
+                {coin?.market_cap_change_percentage_24h?.toLocaleString(
                   undefined,
                   { maximumFractionDigits: 3 }
                 )}
               </span>
               <span className="hidden lg:block coin-table">
-                {coin?.market_cap.toLocaleString(undefined, {
+                {coin?.market_cap?.toLocaleString(undefined, {
                   maximumFractionDigits: 3,
                 })}
                 $
@@ -216,7 +210,7 @@ const Coins = ({ hasPagination }: ICoinProps) => {
         }`}
       >
         <span className="hidden md:block">
-          Data provided by
+          {t("market.dataBy")}{" "}
           <a
             className=" text-green-400 underline"
             href="http://www.coingecko.com"

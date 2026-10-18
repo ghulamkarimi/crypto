@@ -7,16 +7,16 @@ import {
 import { RootState } from "../../feature/store";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import Result from "./sidebar/Results";
+import { useTranslation } from "react-i18next";
 
 const Positions = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const { getDate, navPositionType, positionsType, positionsCalenderType } =
     useSelector((state: RootState) => state.journals);
   const date = localStorage.getItem("date");
-  const { isDarkMode } = useSelector((state: RootState) => state.app);
   const userId = localStorage.getItem("userId");
   const journals = useSelector(displayJournals);
   const userLoginJournals = journals.filter(
@@ -62,55 +62,62 @@ const Positions = () => {
     const storedDate = localStorage.getItem("date");
     dispatch(setDate(storedDate));
   }, [getDate, dispatch]);
-  console.log(positionsType);
   return (
-    <div className="w-full min-h-screen flex flex-col">
-      <div
-        className={`flex flex-col gap-1 ${
-          isDarkMode ? "bg-SECONDARY_BLACK" : "bg-SECONDARY_WHITE"
-        } py-12 h-fit rounded-lg px-6 w-full`}
-      >
-        {openPositions.map((position) => {
-          let bgColor = "bg-orange-500"; // Default color for open positions
-
-          if (position?.isClose) {
-            bgColor =
-              position?.profit > 0
-                ? "bg-green-500" // Closed and profitable
-                : "bg-red-500"; // Closed and at a loss
-          }
-
-          return (
-            <div
-              key={position?._id}
-              className={`px-5 py-4 rounded-lg font-FONT_VIGA cursor-pointer text-xs sm:text-lg hover:bg-PRIMARY_BLUE ${bgColor}`}
-              onClick={() => {
-                navigate(`/positions/${position?._id}`);
-                dispatch(setJournalId(position?._id));
-              }}
-            >
-              <div className="flex gap-4">
-                <p>
-                  {position?.baseCoin}/{position?.quoteCoin}
-                </p>
-                <p>{position?.tradeType}</p>
-                <p>{position?.startTime}</p>
-                <p>{position?.startDate}</p>
-              </div>
-            </div>
-          );
-        })}
-
+    <div className="w-full flex flex-col">
+      <div className="section-head">
+        <h2>{date || t("journalPage.positions")}</h2>
         <button
-          className="btn btn-primary my-2"
+          type="button"
+          className="text-[15px] muted hover:text-PRIMARY_ORANGE"
           onClick={() => {
             localStorage.removeItem("date");
             navigate("/journal");
           }}
         >
-          Back to Calendar
+          {t("journalPage.backToCalendar")}
         </button>
       </div>
+
+      <div className="hidden sm:grid grid-cols-12 gap-3 py-3 text-sm muted row-line">
+        <span className="col-span-4">{t("journalPage.pair")}</span>
+        <span className="col-span-2">{t("journalPage.type")}</span>
+        <span className="col-span-2">{t("journalPage.time")}</span>
+        <span className="col-span-2">{t("journalPage.date")}</span>
+        <span className="col-span-2 text-right">{t("journalPage.status")}</span>
+      </div>
+
+      {openPositions.length === 0 && (
+        <p className="py-8 muted">{t("journalPage.noPositions")}</p>
+      )}
+
+      {openPositions.map((position) => {
+        const status = position?.isClose
+          ? position?.profit > 0
+            ? { label: t("journalPage.profit"), cls: "text-SECONDARY_GREEN" }
+            : { label: t("journalPage.loss"), cls: "text-SECONDARY_RED" }
+          : { label: t("journalPage.open"), cls: "text-PRIMARY_ORANGE" };
+        return (
+          <button
+            type="button"
+            key={position?._id}
+            className="row-line grid grid-cols-12 gap-x-3 gap-y-1 py-4 text-left hover:bg-[var(--hover)]"
+            onClick={() => {
+              navigate(`/positions/${position?._id}`);
+              dispatch(setJournalId(position?._id));
+            }}
+          >
+            <span className="col-span-8 sm:col-span-4 font-semibold">
+              {position?.baseCoin}/{position?.quoteCoin}
+            </span>
+            <span className={`col-span-4 sm:col-span-2 sm:order-5 sm:text-right font-semibold text-right ${status.cls}`}>
+              {status.label}
+            </span>
+            <span className="col-span-4 sm:col-span-2 capitalize">{position?.tradeType}</span>
+            <span className="col-span-4 sm:col-span-2 tabular-nums muted">{position?.startTime}</span>
+            <span className="col-span-4 sm:col-span-2 tabular-nums muted">{position?.startDate}</span>
+          </button>
+        );
+      })}
     </div>
   );
 };

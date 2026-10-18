@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { IoSearchSharp } from "react-icons/io5";
 
 import { useDispatch, useSelector } from "react-redux";
@@ -8,6 +9,7 @@ import { RootState } from "../../feature/store";
 import { setInputValueSearchBox } from "../../feature/reducers/appSlice";
 
 const SearchBox = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const [showArrowIcon, setShowArrowIcon] = useState(false);
   const { isSearchBoxActive, inputValueSearchBox } = useSelector(
@@ -32,7 +34,7 @@ const SearchBox = () => {
         <input
           type="text"
           className={`outline-0 w-full bg-transparent py-2 font-FONT_SALSA  text-xl leading-10 -tracking-tighter `}
-          placeholder="Search..."
+          placeholder={t("nav.search")}
           onChange={handleInputChange}
           value={inputValueSearchBox}
         />
@@ -40,7 +42,7 @@ const SearchBox = () => {
         <FaArrowRightLong
           className={`${
             showArrowIcon
-              ? "w-8 h-8 cursor-pointer text-BRAND_COLOR animate-pulse"
+              ? "w-8 h-8 cursor-pointer text-BRAND_COLOR"
               : "hidden"
           }`}
         />

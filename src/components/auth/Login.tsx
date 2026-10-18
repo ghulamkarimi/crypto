@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import * as Yup from "yup";
 import { useFormik } from "formik";
+import { IoEyeSharp } from "react-icons/io5";
+import { RiEyeCloseFill } from "react-icons/ri";
 import {
   loginUserApi,
   setIsLoginFormOpen,
@@ -9,103 +13,111 @@ import {
 } from "../../feature/reducers/userSlice";
 import { NotificationService } from "../../services/notificationServices";
 import { AppDispatch } from "../../feature/store";
-import logo from "../../assets/images/logo.png";
+
 const Login = () => {
   const dispatch = useDispatch<AppDispatch>();
-
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const formSchema = Yup.object({
     email: Yup.string()
-      .required("Email address is required")
-      .email("Invalid email address"),
-
+      .required(t("auth.emailRequired"))
+      .email(t("auth.emailInvalid")),
     password: Yup.string()
-      .required("Password is required")
-      .min(6, "Password must be at least 6 characters"),
+      .required(t("auth.passwordRequired"))
+      .min(6, t("auth.passwordMin")),
   });
+
   const formik = useFormik({
-    initialValues: {
-      email: "",
-      password: "",
-    },
+    initialValues: { email: "", password: "" },
+    validationSchema: formSchema,
     onSubmit: async (values) => {
+      setLoading(true);
       try {
         const response = await dispatch(loginUserApi(values)).unwrap();
         NotificationService.success(response.message);
-        dispatch(setUserInfo(response.userInfo))
+        dispatch(setUserInfo(response.userInfo));
         localStorage.setItem("userId", response.userInfo.userId);
         localStorage.setItem("exp", response.userInfo.exp);
-        setTimeout(() => {
-          
-          navigate("/home", { replace: true });
-        }, 3000);
+        navigate("/home", { replace: true });
       } catch (error: any) {
-        NotificationService.error(error.message);
+        NotificationService.error(error?.message ?? String(error));
+      } finally {
+        setLoading(false);
       }
     },
-    validationSchema: formSchema,
   });
 
-  return (
-    <div
-      className={`
-             "w-full flex justify-center"
-        }`}
-    >
-      <div
-        className={` h-fit w-full sm:w-full md:w-[500px]  lg:w-[500px] px-8 py-16 flex flex-col  rounded-3xl bg-STONE_300 box-theme`}
-      >
-        <div className="w-full flex justify-center items-center gap-5 mb-8 cursor-pointer">
-          <img className="w-16 h-16" src={logo} alt="" />
-          <h3 className=" font-ANTON text-3xl sm:text-3xl md:text-4xl lg:text-5xl">
-            Crypto Currency
-          </h3>
-        </div>
-        <div className="flex items-center gap-5 mb-8 justify-start mr-5">
-          <h4 className="">If you have an account, please log in.</h4>
-        </div>
+  const firstError =
+    (formik.touched.email && formik.errors.email) ||
+    (formik.touched.password && formik.errors.password) ||
+    "";
 
-        <form className="flex flex-col gap-3" onSubmit={formik.handleSubmit}>
+  return (
+    <form className="flex flex-col gap-5" onSubmit={formik.handleSubmit} noValidate>
+      <div className="flex flex-col gap-1.5">
+        <label className="field-label" htmlFor="login-email">{t("auth.email")}</label>
+        <input
+          id="login-email"
+          className="field"
+          type="email"
+          name="email"
+          autoComplete="email"
+          value={formik.values.email}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="field-label" htmlFor="login-password">{t("auth.password")}</label>
+        <div className="relative">
           <input
-            className="input-light"
-            placeholder="email"
-            type="email"
-            name="email"
-            value={formik.values.email}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-          />
-          <input
-            className="input-light"
-            placeholder="password"
-            type="password"
+            id="login-password"
+            className="field pr-12"
+            type={showPassword ? "text" : "password"}
             name="password"
+            autoComplete="current-password"
             value={formik.values.password}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
           />
-          <button type="submit" className="btn btn-primary">
-            Login
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xl muted hover:text-PRIMARY_ORANGE"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
+          >
+            {showPassword ? <IoEyeSharp /> : <RiEyeCloseFill />}
           </button>
-        </form>
-        <div className="mt-6">
-          <NavLink to="/forget-password">Forgot Password?</NavLink>
         </div>
-        <div className="my-6 flex w-full items-center gap-3">
-          <div className="w-full border"></div>
-          <h2 className="text-center w-fit">Or</h2>
-          <div className="w-full border"></div>
-        </div>
+      </div>
+
+      {firstError && (
+        <p role="alert" className="text-SECONDARY_RED text-sm">{String(firstError)}</p>
+      )}
+
+      <button type="submit" disabled={loading} className="btn btn-primary !py-3 w-full text-center disabled:opacity-60">
+        {t("auth.login")}
+      </button>
+
+      <NavLink to="/forget-password" className="text-sm muted hover:text-PRIMARY_ORANGE self-start">
+        {t("auth.forgot")}
+      </NavLink>
+
+      <div className="border-t border-[var(--line)] pt-5 flex flex-wrap items-center gap-3">
+        <span className="muted">{t("authPage.noAccount")}</span>
         <button
-          className="btn btn-primary"
-          onClick={() => {
-            dispatch(setIsLoginFormOpen(false));
-          }}
+          type="button"
+          className="underline underline-offset-4 hover:text-PRIMARY_ORANGE"
+          onClick={() => dispatch(setIsLoginFormOpen(false))}
         >
-          Register
+          {t("auth.register")}
         </button>
       </div>
-    </div>
+    </form>
   );
 };
 

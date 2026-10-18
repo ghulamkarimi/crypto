@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../feature/store";
 import { setIsUserPanelOpen } from "../../../feature/reducers/appSlice";
@@ -44,6 +45,7 @@ const panelItem = [
 // End User Panel
 const UserControllPanel = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { isUserPanelOpen } = useSelector((state: RootState) => state.app);
   const userId = localStorage.getItem("userId");
 
@@ -58,7 +60,7 @@ const UserControllPanel = () => {
   return (
     <>
       <div
-        className={`flex items-center gap-2 bg-transparent p-2 rounded-lg cursor-pointer border hover:border-SECONDARY_GRAY`}
+        className={`flex items-center gap-2 bg-transparent p-1 sm:p-2 rounded-lg cursor-pointer border hover:border-SECONDARY_GRAY`}
         onClick={(event) => {
           dispatch(setIsUserPanelOpen(!isUserPanelOpen));
           event.isPropagationStopped();
@@ -124,7 +126,7 @@ const UserControllPanel = () => {
           >
             <div className="flex items-center gap-4">
               <span> {item.icon}</span>
-              <p>{item.title}</p>
+              <p>{t(`user.${item.title}`)}</p>
             </div>
             <span className=" hidden group-hover:flex"> {item.active}</span>
           </div>

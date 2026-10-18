@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import Carousel from "react-multi-carousel";
 import { useSelector } from "react-redux";
@@ -6,6 +7,7 @@ import ShowTime from "../showTime/ShowTime";
 import { useNavigate } from "react-router-dom";
 
 const NewsSlideHome = () => {
+  const { t } = useTranslation();
   const news = useSelector(displayNews);
   const navigate = useNavigate();
 
@@ -28,9 +30,9 @@ const NewsSlideHome = () => {
   return (
     <div className="py-16 px-3 font-FONT_VIGA ">
       <div>
-        <p className="text-center text-3xl ">TOP NEWS</p>
+        <p className="text-center text-3xl ">{t("home.topNews")}</p>
         <p className="text-center pt-5 py-8">
-          Crypto Pulse: Breaking News and Updates from the Cryptocurrency World
+          {t("home.topNewsText")}
         </p>
       </div>
       <Carousel

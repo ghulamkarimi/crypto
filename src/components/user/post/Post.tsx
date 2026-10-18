@@ -132,11 +132,11 @@ const Post = () => {
             <div className="flex justify-start gap-8 px-3 font-FONT_VIGA ">
               <span className="flex items-center gap-2">
                 <p>Like</p>
-                <BiLike className="text-2xl hover:animate-bounce" />
+                <BiLike className="text-2xl" />
               </span>
               <span className="flex items-center gap-2">
                 <p className="flex items-center gap-2">comment</p>
-                <FaRegComment className="text-2xl hover:animate-bounce" />
+                <FaRegComment className="text-2xl" />
               </span>
             </div>
             {/* Trennlinie */}

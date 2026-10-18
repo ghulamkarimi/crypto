@@ -53,23 +53,23 @@ const CoinSlider = () => {
             <div className="flex gap-3 ">
               <span className="font-bold text-xl"></span>
               <span className="text-xl font-bold">
-                {coin.current_price.toLocaleString(undefined, {
+                {coin.current_price?.toLocaleString(undefined, {
                   maximumFractionDigits: 3,
                 })}{" "}
                 USDT
               </span>
             </div>
             <div className="flex gap-3">
-              <span
+              {/* <span
                 className={`rounded-lg px-1 w-32 text-center ${
                   coin.price_change_24h < 0 ? "bg-PRIMARY_RED" : " bg-green-600"
                 }`}
               >
-                {coin.price_change_24h.toLocaleString(undefined, {
+                {coin.price_change_24h?.toLocaleString(undefined, {
                   maximumFractionDigits: 3,
                 })}{" "}
                 $
-              </span>
+              </span> */}
             </div>
           </div>
         </div>

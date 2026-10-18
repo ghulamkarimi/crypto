@@ -2,7 +2,6 @@ import { useDispatch, useSelector } from "react-redux";
 import MaxWithWrapper from "../components/MaxWithWrapper";
 import News from "../components/news/News";
 import NewsHeader from "../components/news/NewsHeader";
-import TopNewsSlide from "../components/news/TopNewsSlider";
 import { AppDispatch, RootState } from "../feature/store";
 import { setIsPostComponentActive } from "../feature/reducers/appSlice";
 import CreatePost from "../components/crud/CreatePost";
@@ -12,6 +11,7 @@ import SingleNews from "../components/news/SingleNews";
 import { useEffect } from "react";
 import DeletePost from "../components/crud/DeletePost";
 import EditPost from "../components/crud/EditPost";
+import { useTranslation } from "react-i18next";
 import Spinner from "../components/Spinner";
 
 const NewsPage = () => {
@@ -24,6 +24,7 @@ const NewsPage = () => {
   } = useSelector((state: RootState) => state.app);
 
   const dispatch = useDispatch<AppDispatch>();
+  const { t } = useTranslation();
   const { newsId } = useParams();
 
   useEffect(() => {
@@ -60,7 +61,7 @@ const NewsPage = () => {
               .map((news) => (
                 <li
                   key={news?._id}
-                  className="py-2 px-5 border-b last:border-b-0 cursor-pointer hover:bg-PRIMARY_BLUE transition-all duration-200 hover:text-BLACK text-SECONDARY_GRAY"
+                  className="py-2 px-5 border-b border-[var(--line)] last:border-b-0 cursor-pointer hover:bg-[var(--hover)]"
                   onClick={() => {
                     navigate(`/news/${news?._id}`);
                   }}
@@ -83,29 +84,12 @@ const NewsPage = () => {
               ))}
           </ul>
         </div>
-        <div
-          className={`${
-            isDarkMode
-              ? "bg-SECONDARY_BLACK hover:text-PRIMARY_BLACK"
-              : "bg-SECONDARY_WHITE"
-          } hover:bg-LIGHT_BLUE rounded-full py-4 px-4 hover:bg-WHITE_SECONDARY flex items-center gap-4 border border-BACKGROUND`}
-        >
-          <h3 className="text-PRIMARY_BLUE line-clamp-1">Top News:</h3>
-          <span className="text-BACKGROUND">
-            <TopNewsSlide />
-          </span>
-        </div>
-      </div>
-      <div
-        onClick={() => dispatch(setIsPostComponentActive(true))}
-        className="text-right"
-      >
-        <button className="btn btn-primary">
-          <span className="mr-1">+</span>
-          New News
-        </button>
       </div>
       <NewsHeader />
+      <div className="flex justify-end pb-4" onClick={() => dispatch(setIsPostComponentActive(true))}>
+        <button className="btn btn-primary">{t("newsPage.newNews")}</button>
+      </div>
+
       {/* {newsId !== undefined ? <SingleNews /> : <News />} */}
      
       {newsId ? (

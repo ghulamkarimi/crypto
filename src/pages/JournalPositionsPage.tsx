@@ -1,24 +1,18 @@
 import { useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import MaxWithWrapper from "../components/MaxWithWrapper";
 import Positions from "../components/journal/Positions";
-import { useDispatch } from "react-redux";
 import Position from "../components/journal/Position";
-import { useEffect } from "react";
-import {
-
-
-  setJournalId,
-} from "../feature/reducers/journalSlice";
-import CoinMarquee from "../components/coins/CoinMarquee";
+import { setJournalId } from "../feature/reducers/journalSlice";
 import NavLeft from "../components/journal/NavLeft";
 import NavRight from "../components/journal/NavRight";
 
-
-
 const JournalPositionsPage = () => {
   const { journalId } = useParams();
-
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   useEffect(() => {
     dispatch(setJournalId(journalId));
@@ -26,19 +20,15 @@ const JournalPositionsPage = () => {
 
   return (
     <MaxWithWrapper>
-      <div className="my-6">
-        <CoinMarquee />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="hidden xl:flex xl:col-span-3 bg-SECONDARY_WHITE rounded-lg">
-          <NavLeft />
-        </div>
-        <div className="flex flex-col col-span-12 lg:col-span-8 xl:col-span-6">
+      <div className="py-10 flex flex-wrap gap-x-14 gap-y-12">
+        <div className="flex-[999_1_520px] min-w-0">
+          <h1 className="mb-8 text-5xl">{t("journalPage.title")}</h1>
           {journalId === undefined ? <Positions /> : <Position />}
         </div>
-        <div className="w-full lg:col-span-4 xl:col-span-3 bg-SECONDARY_WHITE rounded-lg">
+        <aside className="flex-[1_1_300px] min-w-0 flex flex-col gap-10 lg:pt-[72px]">
+          <NavLeft />
           <NavRight />
-        </div>
+        </aside>
       </div>
     </MaxWithWrapper>
   );

@@ -1,11 +1,9 @@
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../feature/store";
 import { displayUser } from "../../feature/reducers/userSlice";
-import { useEffect, useState } from "react";
-import { FaArrowRight } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 import {
   displayJournals,
-  setIsShowPositionHeaderActive,
   setNavPositionType,
   setPositionsCalenderType,
   setPositionsType,
@@ -32,7 +30,7 @@ const HeaderJournal = ({
   setYears,
   expJournal,
 }: IHeaderJournalProps) => {
-  const { isDarkMode } = useSelector((state: RootState) => state.app);
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const user = useSelector((state: RootState) => displayUser(state, userId!));
@@ -40,88 +38,81 @@ const HeaderJournal = ({
   const userJournals = journals.filter((journal) => journal.user === userId!);
   const userOpenPositions = userJournals.filter((journal) => !journal.isClose);
   const userJournalProfit = userJournals.filter((journal) => journal.results);
-  const [nameOfMonth, setNameOfMonth] = useState("");
   const dispatch = useDispatch();
 
+  const lossCount =
+    userJournals.length - (userJournalProfit.length + userOpenPositions.length);
+
+  const OPEN = "#f2b01e";
+  const PROFIT = "#7ccf9e";
+  const LOSS = "#f27d68";
+
   const chartData = {
-    labels: ["Open Positions", "Completed Profits", "Completed Losses"],
+    labels: [t("journalHeader.open"), t("journalHeader.profit"), t("journalHeader.loss")],
     datasets: [
       {
-        data: [
-          userOpenPositions.length,
-          userJournalProfit.length,
-          userJournals.length -
-            (userJournalProfit.length + userOpenPositions.length),
-        ],
-        backgroundColor: ["orange", "green", "red"],
+        data: [userOpenPositions.length, userJournalProfit.length, lossCount],
+        backgroundColor: [OPEN, PROFIT, LOSS],
+        borderWidth: 0,
       },
     ],
+  };
+
+  // Prozentwerte direkt in die Stücke zeichnen (eigenes Mini-Plugin, ohne Fremd-Plugin)
+  const percentPlugin = {
+    id: "percentLabels",
+    afterDatasetsDraw(chart: any) {
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      const values = chart.data.datasets[0].data as number[];
+      const sum = values.reduce((a, b) => a + b, 0);
+      if (!sum) return;
+      ctx.save();
+      ctx.font = "bold 13px 'IBM Plex Sans', sans-serif";
+      ctx.fillStyle = "#1b1a18";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      meta.data.forEach((arc: any, i: number) => {
+        if (!values[i]) return;
+        const pos = values[i] === sum ? { x: arc.x, y: arc.y } : arc.tooltipPosition();
+        ctx.fillText(`${Math.round((values[i] / sum) * 100)} %`, pos.x, pos.y);
+      });
+      ctx.restore();
+    },
   };
 
   const chartOptions = {
     plugins: {
       legend: { display: false },
-      datalabels: {
-        formatter: (value: any, context: any) => {
-          const total = context.dataset.data.reduce(
-            (acc: any, cur: any) => acc + cur,
-            0
-          );
-          if (total === 0) {
-            return "";
-          }
-          const percentage = ((value / total) * 100).toFixed(2) + "%";
-          return percentage;
+      datalabels: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx: any) => `${ctx.label}: ${ctx.raw}`,
         },
-        color: "#ddddd",
-        anchor: "center" as "center", // Hier wird der Typ explizit als "center" angegeben
-        align: "center" as "center", // Hier wird der Typ explizit als "center" angegeben
       },
     },
     responsive: true,
     maintainAspectRatio: true,
+  } as any;
+
+  const monthLabel = new Date(years, month - 1, 1).toLocaleDateString(
+    i18n.language.startsWith("de") ? "de-DE" : "en-US",
+    { month: "long", year: "numeric" }
+  );
+
+  const openPositions = (type: "open" | "profit" | "loss" | "all") => {
+    dispatch(setPositionsType(type));
+    dispatch(setPositionsCalenderType("fake"));
+    dispatch(setNavPositionType("fake"));
+    navigate("/positions");
   };
 
-  const getMonth = () => {
-    switch (month) {
-      case 1:
-        setNameOfMonth("January");
-        break;
-      case 2:
-        setNameOfMonth("February");
-        break;
-      case 3:
-        setNameOfMonth("March");
-        break;
-      case 4:
-        setNameOfMonth("April");
-        break;
-      case 5:
-        setNameOfMonth("May");
-        break;
-      case 6:
-        setNameOfMonth("June");
-        break;
-      case 7:
-        setNameOfMonth("July");
-        break;
-      case 8:
-        setNameOfMonth("August");
-        break;
-      case 9:
-        setNameOfMonth("September");
-        break;
-      case 10:
-        setNameOfMonth("October");
-        break;
-      case 11:
-        setNameOfMonth("November");
-        break;
-      case 12:
-        setNameOfMonth("December");
-        break;
-    }
-  };
+  const legend: { type: "open" | "profit" | "loss" | "all"; label: string; hint: string; color: string; count: number }[] = [
+    { type: "open", label: t("journalHeader.open"), hint: t("journalHeader.openHint"), color: OPEN, count: userOpenPositions.length },
+    { type: "profit", label: t("journalHeader.profit"), hint: t("journalHeader.profitHint"), color: PROFIT, count: userJournalProfit.length },
+    { type: "loss", label: t("journalHeader.loss"), hint: t("journalHeader.lossHint"), color: LOSS, count: lossCount },
+    { type: "all", label: t("journalHeader.all"), hint: t("journalHeader.allHint"), color: "#3fc5dc", count: userJournals.length },
+  ];
 
   const handleNextArrow = () => {
     if (month < 12) setMonth(month + 1);
@@ -137,123 +128,66 @@ const HeaderJournal = ({
       setYears(years - 1);
     }
   };
-  useEffect(() => {
-    getMonth();
-  }, [month]);
-
   return (
-    <div
-      className={`grid grid-cols-12 justify-between  w-full my-12 py-6 px-5 rounded-lg ${
-        isDarkMode ? " bg-SECONDARY_BLACK" : " bg-SECONDARY_WHITE"
-      }`}
-    >
-      <div className="col-span-6 md:col-span-8 flex flex-col">
-        <div className="flex items-center gap-3">
-          <img
-            className="rounded-full w-12 h-12 sm:w-20 sm:h-20"
-            src={user?.profile_photo}
-            alt=""
-          />
-          <div className=" font-FONT_VIGA font-bold w-full">
-            <div className="flex items-center justify-between  w-full">
-              <p className=" text-sm sm:text-lg">
-                {user?.firstName} {user?.lastName}
-              </p>
-            </div>
-            <p className=" text-PRIMARY_GRAY">
-              {new Date().toLocaleDateString()}
+    <div className="flex flex-wrap items-center justify-between gap-x-10 gap-y-5 py-5 border-b border-[var(--line)]">
+      <div className="flex flex-col gap-3 min-w-0">
+        <div className="flex items-center gap-4">
+          <img className="rounded-full w-12 h-12 object-cover" src={user?.profile_photo} alt="" />
+          <div>
+            <h1 className="text-3xl sm:text-4xl leading-none">{t("journalPage.title")}</h1>
+            <p className="muted text-sm">
+              {user?.firstName} {user?.lastName} · {new Date().toLocaleDateString(i18n.language.startsWith("de") ? "de-DE" : "en-GB")}
             </p>
           </div>
         </div>
-        <div className="mt-4 flex flex-col justify-center ">
-          <div className="flex flex-col sm:flex-row justify-center items-center w-fit gap-2">
-            <div className="flex items-center sm:gap-6 font-FONT_VIGA">
-              <FaArrowRight
-                className=" rotate-180 cursor-pointer text-xs  sm:text-lg "
-                onClick={handlePrevArrow}
-              />
-              <p className="text-xs sm:text-sm md:text-xl w-32 sm:w-40  text-center">
-                {nameOfMonth} {years}
-              </p>
-              <FaArrowRight
-                className=" cursor-pointer text-xs  sm:text-lg "
-                onClick={handleNextArrow}
-              />
-            </div>
-            <div>
-              <button
-                className="px-2 py-1 bg-SECONDARY_BLUE rounded-lg w-fit text-center"
-                onClick={() => {
-                  setMonth(new Date().getMonth() + 1);
-                  setYears(new Date().getFullYear());
-                }}
-              >
-                Today
-              </button>
-            </div>
-          </div>
 
-          <p className=" font-FONT_VIGA text-SECONDARY_GRAY py-6">
-            {expJournal.slice(1)}
-          </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1">
+            <button type="button" className="w-8 h-8 rounded hover:bg-[var(--hover)] text-lg" onClick={handlePrevArrow} aria-label={t("journalHeader.prev")}>‹</button>
+            <p className="min-w-36 text-center text-lg font-medium capitalize">{monthLabel}</p>
+            <button type="button" className="w-8 h-8 rounded hover:bg-[var(--hover)] text-lg" onClick={handleNextArrow} aria-label={t("journalHeader.next")}>›</button>
+          </div>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setMonth(new Date().getMonth() + 1);
+              setYears(new Date().getFullYear());
+            }}
+          >
+            {t("journalHeader.today")}
+          </button>
         </div>
+
+        {expJournal.slice(1) && <p className="muted">{expJournal.slice(1)}</p>}
       </div>
 
-      <div className="col-span-6 md:col-span-4 flex justify-end w-full">
-        <div className="flex flex-col-reverse md:flex-row items-center gap-12  text-xs font-FONT_VIGA md:font-bold">
-          <div className="w-32 h-32 md:w-36 md:h-36">
-            <Pie data={chartData} options={chartOptions} />
-          </div>
-          <div className="flex md:flex-col gap-1">
-            <div
-              className="text-center  w-full px-3 py-1 h-fit bg-PRIMARY_ORANGE rounded-lg cursor-pointer "
-              onClick={() => {
-                dispatch(setPositionsType("open"));
-                dispatch(setPositionsCalenderType("fake"))
-                dispatch(setNavPositionType("fake"))
-                navigate("/positions");
-              }}
-            >
-              <p className="">{userOpenPositions.length}</p>
-            </div>
-            <div
-              className="text-center w-full px-3 py-1 h-fit bg-SECONDARY_GREEN rounded-lg cursor-pointer"
-              onClick={() => {
-                dispatch(setPositionsType("profit"));
-                dispatch(setPositionsCalenderType("fake"))
-                dispatch(setNavPositionType("fake"))
-                navigate("/positions");
-              }}
-            >
-              <p>{userJournalProfit.length}</p>
-            </div>
-            <div
-              className="text-center w-full px-3 py-1 h-fit bg-SECONDARY_RED rounded-lg cursor-pointer"
-              onClick={() => {
-                dispatch(setPositionsType("loss"));
-                dispatch(setPositionsCalenderType("fake"))
-                dispatch(setNavPositionType("fake"))
-                navigate("/positions");
-              }}
-            >
-              <p className="">
-                {userJournals.length -
-                  (userJournalProfit.length + userOpenPositions.length)}{" "}
-              </p>
-            </div>
-            <div
-              className="text-center w-full px-3 py-1 h-fit bg-PRIMARY_BLUE rounded-lg cursor-pointer"
-              onClick={() => {
-                dispatch(setPositionsType("all"));
-                dispatch(setPositionsCalenderType("fake"))
-                dispatch(setNavPositionType("fake"))
-                navigate("/positions");
-              }}
-            >
-              <p className="">{userJournals.length}</p>
-            </div>
-          </div>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+        <div className="w-24 h-24 flex-none">
+          {userJournals.length > 0 ? (
+            <Pie data={chartData} options={chartOptions} plugins={[percentPlugin]} />
+          ) : (
+            <div className="w-full h-full rounded-full border border-[var(--line)]" aria-hidden="true" />
+          )}
         </div>
+        <ul className="flex flex-col min-w-[220px]">
+          {legend.map((item) => (
+            <li key={item.type}>
+              <button
+                type="button"
+                onClick={() => openPositions(item.type)}
+                className="row-line w-full flex items-center gap-3 py-1.5 text-left hover:text-PRIMARY_ORANGE"
+              >
+                <span className="w-3 h-3 rounded-sm flex-none" style={{ background: item.color }} aria-hidden="true" />
+                <span className="flex-1">
+                  <span className="font-medium">{item.label}</span>
+                  <span className="block text-xs muted">{item.hint}</span>
+                </span>
+                <span className="font-FONT_SALSA font-bold text-xl tabular-nums">{item.count}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

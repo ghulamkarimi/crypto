@@ -1,46 +1,37 @@
+import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import * as Yup from "yup";
 import { useFormik } from "formik";
+import { IoEyeSharp } from "react-icons/io5";
+import { RiEyeCloseFill } from "react-icons/ri";
 import { NotificationService } from "../../services/notificationServices";
 import { registerUserApi, setIsLoginFormOpen } from "../../feature/reducers/userSlice";
-import logo from "../../assets/images/logo.png";
-import { FaArrowRightLong } from "react-icons/fa6";
-import { RiEyeCloseFill } from "react-icons/ri";
-import { IoEyeSharp } from "react-icons/io5";
-import { useState } from "react";
 import { AppDispatch } from "../../feature/store";
 
 const Register = () => {
   const dispatch = useDispatch<AppDispatch>();
-
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
+  // Buchstaben aller Sprachen inkl. Umlaute, Bindestrich und Leerzeichen
+  const namePattern = /^[\p{L}][\p{L} '-]*$/u;
 
   const formSchema = Yup.object({
     firstName: Yup.string()
-      .required("First name is required")
-      .matches(/^[A-Za-z]+$/, "Only alphabets are allowed in first name"),
-
+      .trim()
+      .required(t("auth.firstNameRequired"))
+      .matches(namePattern, t("auth.firstNameLetters")),
     lastName: Yup.string()
-      .required("Last name is required")
-      .matches(/^[A-Za-z]+$/, "Only alphabets are allowed in last name"),
-    email: Yup.string()
-      .required("Email address is required")
-      .email("Invalid email address"),
-
-    password: Yup.string()
-      .required("Password is required")
-      .min(6, "Password must be at least 6 characters"),
-
+      .trim()
+      .required(t("auth.lastNameRequired"))
+      .matches(namePattern, t("auth.lastNameLetters")),
+    email: Yup.string().required(t("auth.emailRequired")).email(t("auth.emailInvalid")),
+    password: Yup.string().required(t("auth.passwordRequired")).min(6, t("auth.passwordMin")),
     confirmPassword: Yup.string()
-      .required("Confirm password is required")
-      .test("passwords-match", "Passwords must match", function (value) {
-        return this.parent.password === value;
-      }),
-
+      .required(t("auth.confirmRequired"))
+      .oneOf([Yup.ref("password")], t("auth.passwordsMatch")),
     gender: Yup.string().oneOf(["male", "female", "diverse"]),
   });
 
@@ -53,167 +44,110 @@ const Register = () => {
       confirmPassword: "",
       gender: "male",
     },
+    validationSchema: formSchema,
     onSubmit: async (values) => {
+      setLoading(true);
       try {
         const response = await dispatch(registerUserApi(values)).unwrap();
         NotificationService.success(response.message);
-        setTimeout(() => {
-          dispatch(setIsLoginFormOpen(true));
-        }, 3000);
+        dispatch(setIsLoginFormOpen(true));
       } catch (error: any) {
-        NotificationService.error(error.message);
+        NotificationService.error(error?.message ?? String(error));
+      } finally {
+        setLoading(false);
       }
     },
-    validationSchema: formSchema,
   });
 
-  return (
-    <>
-      <div className="flex flex-col items-center gap-12 rounded-xl">
-        <div className="w-full sm:w-full md:w-[500px] lg:w-[500px] px-8 py-16 flex flex-col rounded-3xl bg-STONE_300 box-theme">
-          <div className="w-full flex justify-center items-center gap-5 mb-8 cursor-pointer">
-            <img className="w-16 h-16" src={logo} alt="" />
-            <h3 className="font-ANTON text-3xl sm:text-3xl md:text-4xl lg:text-5xl">
-              Crypto Currency
-            </h3>
-          </div>
-          <div className="flex items-center gap-5 mb-8 justify-between mr-5">
-            <h4 className="font-ANTON text-3xl">Register</h4>
-            <FaArrowRightLong
-              className="btn btn-primary"
-              onClick={() => dispatch(setIsLoginFormOpen(true))}
-            />
-          </div>
+  const err = (name: keyof typeof formik.values) =>
+    formik.touched[name] && formik.errors[name] ? String(formik.errors[name]) : "";
 
-          <form className="flex flex-col gap-3" onSubmit={formik.handleSubmit}>
-            <input
-              className={`input-light ${formik.touched.firstName && formik.errors.firstName && "border-red-500"}`}
-              placeholder="Firstname"
-              type="text"
-              name="firstName"
-              value={formik.values.firstName}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            />
-            <input
-              className={`input-light ${formik.touched.lastName && formik.errors.lastName && "border-red-500"}`}
-              placeholder="Lastname"
-              type="text"
-              name="lastName"
-              value={formik.values.lastName}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            />
-            <input
-              className={`input-light ${formik.touched.email && formik.errors.email && "border-red-500"}`}
-              placeholder="Email"
-              type="email"
-              name="email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            />
-            <div className="flex relative items-center justify-center">
-              <input
-                className={`input-light ${formik.touched.password && formik.errors.password && "border-red-500"}`}
-                placeholder="Password"
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formik.values.password}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-              />
-              {showPassword ? (
-                <IoEyeSharp
-                  onClick={togglePasswordVisibility}
-                  className="text-blue-500 absolute right-0 mx-3 text-2xl cursor-pointer"
-                />
-              ) : (
-                <RiEyeCloseFill
-                  onClick={togglePasswordVisibility}
-                  className="text-blue-500 absolute right-0 mx-3 text-2xl cursor-pointer"
-                />
-              )}
-            </div>
-            <div className="flex relative items-center justify-center">
-              <input
-                className={`input-light ${formik.touched.confirmPassword && formik.errors.confirmPassword && "border-red-500"}`}
-                placeholder="Confirm Password"
-                type={showPassword ? "text" : "password"}
-                name="confirmPassword"
-                value={formik.values.confirmPassword}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-              />
-              {showPassword ? (
-                <IoEyeSharp
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-blue-500 absolute right-0 mx-3 text-2xl cursor-pointer"
-                />
-              ) : (
-                <RiEyeCloseFill
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-blue-500 absolute right-0 mx-3 text-2xl cursor-pointer"
-                />
-              )}
-            </div>
-            <div className="flex justify-center items-center gap-6 text-lg">
-              <div className="flex gap-2">
-                <label className="flex items-center gap-2" htmlFor="male">
-                  <input
-                    className="w-6 h-6"
-                    id="male"
-                    type="radio"
-                    name="gender"
-                    value="male"
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    checked={formik.values.gender === "male"}
-                  />
-                  Male
-                </label>
-              </div>
-              <div className="flex gap-2">
-                <label htmlFor="female" className="flex items-center gap-2">
-                  <input
-                    className="w-6 h-6"
-                    id="female"
-                    type="radio"
-                    name="gender"
-                    value="female"
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    checked={formik.values.gender === "female"}
-                  />
-                  Female
-                </label>
-              </div>
-              <div className="flex gap-2">
-                <label htmlFor="diverse" className="flex items-center gap-2">
-                  <input
-                    className="w-6 h-6"
-                    id="diverse"
-                    type="radio"
-                    name="gender"
-                    value="diverse"
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    checked={formik.values.gender === "diverse"}
-                  />
-                  Diverse
-                </label>
-              </div>
-            </div>
-            <div className={`input ${formik.isValid ? "hidden" : "border-red-500 text-red-500"}`}>
-              {Object.values(formik.errors)[0]}
-            </div>
-            <button type="submit" className="btn btn-primary">
-              Register
-            </button>
-          </form>
-        </div>
+  const textField = (name: "firstName" | "lastName" | "email", label: string, type = "text", auto = "") => (
+    <div className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
+      <label className="field-label" htmlFor={`reg-${name}`}>{label}</label>
+      <input
+        id={`reg-${name}`}
+        className={`field ${err(name) ? "!border-SECONDARY_RED" : ""}`}
+        type={type}
+        name={name}
+        autoComplete={auto}
+        value={formik.values[name]}
+        onChange={formik.handleChange}
+        onBlur={formik.handleBlur}
+      />
+      {err(name) && <p role="alert" className="text-SECONDARY_RED text-sm">{err(name)}</p>}
+    </div>
+  );
+
+  const passwordField = (name: "password" | "confirmPassword", label: string, auto: string) => (
+    <div className="flex flex-col gap-1.5">
+      <label className="field-label" htmlFor={`reg-${name}`}>{label}</label>
+      <div className="relative">
+        <input
+          id={`reg-${name}`}
+          className={`field pr-12 ${err(name) ? "!border-SECONDARY_RED" : ""}`}
+          type={showPassword ? "text" : "password"}
+          name={name}
+          autoComplete={auto}
+          value={formik.values[name]}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+        />
+        <button
+          type="button"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-xl muted hover:text-PRIMARY_ORANGE"
+          onClick={() => setShowPassword((v) => !v)}
+          aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
+        >
+          {showPassword ? <IoEyeSharp /> : <RiEyeCloseFill />}
+        </button>
       </div>
-    </>
+      {err(name) && <p role="alert" className="text-SECONDARY_RED text-sm">{err(name)}</p>}
+    </div>
+  );
+
+  return (
+    <form className="flex flex-col gap-5" onSubmit={formik.handleSubmit} noValidate>
+      <div className="flex flex-wrap gap-4">
+        {textField("firstName", t("auth.firstName"), "text", "given-name")}
+        {textField("lastName", t("auth.lastName"), "text", "family-name")}
+      </div>
+      {textField("email", t("auth.email"), "email", "email")}
+      {passwordField("password", t("auth.password"), "new-password")}
+      {passwordField("confirmPassword", t("auth.confirmPassword"), "new-password")}
+
+      <fieldset className="flex flex-wrap gap-x-6 gap-y-2">
+        <legend className="field-label mb-2">{t("auth.gender")}</legend>
+        {(["male", "female", "diverse"] as const).map((g) => (
+          <label key={g} className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="gender"
+              value={g}
+              className="w-5 h-5 accent-[#3fc5dc]"
+              onChange={formik.handleChange}
+              checked={formik.values.gender === g}
+            />
+            {t(`auth.${g}`)}
+          </label>
+        ))}
+      </fieldset>
+
+      <button type="submit" disabled={loading} className="btn btn-primary !py-3 w-full text-center disabled:opacity-60">
+        {t("auth.register")}
+      </button>
+
+      <div className="border-t border-[var(--line)] pt-5 flex flex-wrap items-center gap-3">
+        <span className="muted">{t("authPage.haveAccount")}</span>
+        <button
+          type="button"
+          className="underline underline-offset-4 hover:text-PRIMARY_ORANGE"
+          onClick={() => dispatch(setIsLoginFormOpen(true))}
+        >
+          {t("auth.login")}
+        </button>
+      </div>
+    </form>
   );
 };
 

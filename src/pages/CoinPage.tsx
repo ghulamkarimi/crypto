@@ -6,8 +6,6 @@ import { useEffect } from "react";
 import MaxWithWrapper from "../components/MaxWithWrapper";
 import Coins from "../components/coins/Coins";
 import { RootState } from "../feature/store";
-import CoinSlider from "../components/coins/CoinSlider";
-import CoinMarquee from "../components/coins/CoinMarquee";
 
 const CoinPage = () => {
   const { isDarkMode, inputValueSearchBox } = useSelector(
@@ -46,7 +44,7 @@ const CoinPage = () => {
             .map((coin,index) => (
               <li
                 key={index}
-                className="py-2 px-5 border-b last:border-b-0 cursor-pointer hover:bg-PRIMARY_BLUE transition-all duration-200"
+                className="py-2 px-5 border-b border-[var(--line)] last:border-b-0 cursor-pointer hover:bg-[var(--hover)]"
                 onClick={() => {
                   navigate(`/coin/${coin.id}`);
                 }}
@@ -69,14 +67,10 @@ const CoinPage = () => {
             ))}
         </ul>
 
-      <div className=" my-6">
-          <CoinMarquee />
-        </div>
-        <div className=" my-6">
-          <CoinSlider />
-        </div>
       </div>
-      {coinId === undefined ? <Coins hasPagination={true} /> : <Coin />}
+      <div className="py-10">
+        {coinId === undefined ? <Coins hasPagination={true} /> : <Coin />}
+      </div>
     </MaxWithWrapper>
   );
 };

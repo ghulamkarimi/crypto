@@ -7,16 +7,25 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Abhängigkeiten und Build-Ergebnisse
 node_modules
 dist
 dist-ssr
+coverage
 *.local
+.vite
 
-# Editor directories and files
+# Geheimnisse: nie ins Repository (nur .env.example gehört hinein)
+.env
+.env.*
+!.env.example
+
+# Editor und Betriebssystem
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj

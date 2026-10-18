@@ -1,82 +1,116 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;700&family=Salsa&family=Viga&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Anton&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-
-body {
-  animation: fadein .5s ease-in;
-  font-family: "Roboto";
+:root {
+  --amber: #f2b01e;
+  --cyan: #3fc5dc;
+  --up: #7ccf9e;
+  --down: #f27d68;
 }
 
-@keyframes fadein {
-  from {
-      opacity: 0;
-  }
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
 
-  to {
-      opacity: 1;
-  }
+body {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  margin: 0;
 }
 
 .dark-theme {
+  --line: #34312c;
+  --muted: #a29c90;
+  --surface: #121110;
+  --hover: rgba(255, 255, 255, 0.05);
   @apply bg-PRIMARY_BLACK text-PRIMARY_WHITE;
 }
 
 .light-theme {
-  @apply bg-PRIMARY_WHITE text-SECONDARY_BLACK;
+  --line: #d6d2c8;
+  --muted: #6b665b;
+  --surface: #fbfaf7;
+  --hover: rgba(0, 0, 0, 0.05);
+  @apply bg-[#eeede8] text-PRIMARY_BLACK;
+}
+
+@layer base {
+  /* Rahmen überall in der ruhigen Linienfarbe des Themes */
+  *, ::before, ::after {
+    border-color: var(--line, #34312c);
+  }
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
 }
 
 .coin-slider-theme {
-  @apply bg-DARK_BLUE text-PRIMARY_WHITE font-FONT_SALSA;
+  @apply bg-DARK_BLUE text-PRIMARY_WHITE font-FONT_VIGA border border-LIGHT_GRAY;
 }
 
 .box-theme {
-  @apply bg-gradient-to-r from-gray-800 from-10% to-PRIMARY_BLACK to-90% text-PRIMARY_WHITE;
+  @apply bg-SECONDARY_BLACK text-PRIMARY_WHITE border border-LIGHT_GRAY;
+}
+
+.field-label {
+  @apply text-sm font-medium;
+}
+
+.field {
+  @apply w-full rounded border bg-[var(--surface)] px-4 py-3 text-base outline-none transition-colors;
+  border-color: var(--line);
+}
+.field:focus {
+  border-color: var(--cyan);
 }
 
 .input-light {
-  @apply bg-PRIMARY_WHITE rounded-lg py-3 px-5 w-full outline-0 text-xs sm:text-base border text-PRIMARY_BLACK placeholder:uppercase;
+  @apply bg-PRIMARY_WHITE rounded-lg py-3 px-5 w-full outline-0 text-xs sm:text-base border text-PRIMARY_BLACK placeholder:text-PRIMARY_GRAY;
 }
 .input-dark {
-  @apply bg-PRIMARY_BLACK rounded-lg py-3 px-5 w-full outline-0 text-xs sm:text-base border text-PRIMARY_WHITE  placeholder:uppercase;
+  @apply bg-PRIMARY_BLACK rounded-lg py-3 px-5 w-full outline-0 text-xs sm:text-base border text-PRIMARY_WHITE  placeholder:text-PRIMARY_GRAY;
 }
 
 .active {
-  @apply text-SECONDARY_BLUE;
+  @apply text-PRIMARY_ORANGE;
 }
 
 h1,
 h2,
 h3,
 h4 {
-  @apply font-FONT_SALSA;
+  @apply font-FONT_SALSA font-bold tracking-[0.01em];
+  text-wrap: balance;
 }
 
 h1 {
-  @apply text-4xl;
+  @apply text-5xl leading-[0.98];
 }
 h2 {
-  @apply text-3xl;
+  @apply text-4xl leading-none;
 }
 h3 {
-  @apply text-2xl;
+  @apply text-3xl leading-none;
 }
 h4 {
-  @apply text-xl;
+  @apply text-2xl leading-tight;
 }
 
 .btn {
-  @apply p-2 font-bold font-FONT_VIGA w-fit uppercase rounded-lg hover:text-PRIMARY_BLUE hover:bg-transparent cursor-pointer  border-2 border-SECONDARY_BLUE h-fit transition-all duration-300;
+  @apply px-4 py-2 font-semibold font-FONT_VIGA w-fit rounded cursor-pointer border border-SECONDARY_BLUE h-fit transition-colors duration-200;
 }
 .btn-delete {
-  @apply p-2 font-bold font-FONT_VIGA w-fit uppercase rounded-lg bg-SECONDARY_RED hover:text-PRIMARY_RED hover:bg-transparent cursor-pointer  border-2 border-SECONDARY_RED h-fit transition-all duration-300;
+  @apply px-4 py-2 font-semibold font-FONT_VIGA w-fit rounded bg-SECONDARY_RED text-BLACK hover:bg-transparent hover:text-SECONDARY_RED cursor-pointer border border-SECONDARY_RED h-fit transition-colors duration-200;
 }
 
 .btn-primary {
-  @apply bg-SECONDARY_BLUE  text-PRIMARY_WHITE;
+  @apply bg-SECONDARY_BLUE text-[#0f1b1e] hover:bg-transparent hover:text-SECONDARY_BLUE;
 }
 
 .icon {
@@ -123,6 +157,9 @@ h4 {
 
 .coin-header-table {
   @apply grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-12 items-center ;
+}
+.coin-header-table > * {
+  min-width: 0;
 }
 .input-verify-code {
   @apply border-2 border-SECONDARY_GRAY rounded-lg w-12 h-12 text-center text-2xl font-FONT_VIGA;
@@ -178,4 +215,113 @@ input[type="number"] {
 }
 .bg-PLATINUM_COLOR {
   background-color: #7dd3fc; /* Hier deine gewünschte Farbe einfügen */
+}
+
+
+/* ---------- Orosia: Marktanzeige (Split-Flap) ---------- */
+.board {
+  --t: clamp(11px, calc((100cqw - 100px) / 19.5), 34px);
+  background: #121110;
+  border: 1px solid #34312c;
+  border-radius: 8px;
+  padding: 12px;
+  color: #ece7dc;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: fit-content;
+  max-width: 100%;
+  margin-left: 0;
+}
+.board-wrap { container-type: inline-size; min-width: 0; }
+.board-row { display: flex; gap: 3px; align-items: center; width: 100%; text-align: left; }
+button.board-row:hover .flap-tile { box-shadow: inset 0 0 0 1px rgba(242, 176, 30, 0.6); }
+.flap-gap { flex: none; width: calc(var(--t) * 0.5); }
+.flap-tile {
+  position: relative;
+  flex: none;
+  width: var(--t);
+  height: calc(var(--t) * 1.4);
+  border-radius: 3px;
+  background: linear-gradient(#2d2b27 0 50%, #242220 50% 100%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+  perspective: 400px;
+}
+.flap-tile::after {
+  content: "";
+  position: absolute; left: 0; right: 0; top: 50%; height: 1px;
+  background: #0d0c0b; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.flap-char {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Big Shoulders Display", "Arial Narrow", sans-serif;
+  font-weight: 700;
+  font-size: calc(var(--t) * 1.15);
+  line-height: 1;
+}
+.flap-sep-cell {
+  flex: none;
+  width: calc(var(--t) * 0.45);
+  height: calc(var(--t) * 1.4);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: calc(var(--t) * 0.12);
+  font-family: "Big Shoulders Display", "Arial Narrow", sans-serif;
+  font-weight: 800;
+  font-size: calc(var(--t) * 1.2);
+  line-height: 1;
+}
+@keyframes flap {
+  0% { transform: rotateX(-90deg); opacity: 0; }
+  55% { opacity: 1; }
+  100% { transform: rotateX(0deg); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flap-char { animation: none !important; }
+  body { animation: none !important; }
+}
+
+.section-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding-bottom: 14px; border-bottom: 1px solid currentColor;
+}
+.row-line { border-bottom: 1px solid var(--line); }
+.muted { color: var(--muted); }
+
+
+/* ---------- Meldungen (Toasts) im Kursbuch-Stil ---------- */
+.Toastify__toast-container--top-right {
+  top: 84px !important;
+  right: 20px !important;
+  width: min(380px, calc(100vw - 24px)) !important;
+}
+.Toastify__toast {
+  background: var(--surface, #121110);
+  color: inherit;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  min-height: 0;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+.Toastify__toast-body { padding: 0; margin: 0; align-items: flex-start; }
+.Toastify__toast-icon { width: 20px; margin-inline-end: 12px; margin-top: 1px; }
+.Toastify__toast--success .Toastify__toast-icon svg { fill: #7ccf9e; }
+.Toastify__toast--error .Toastify__toast-icon svg { fill: #f27d68; }
+.Toastify__toast--info .Toastify__toast-icon svg { fill: #3fc5dc; }
+.Toastify__toast--warning .Toastify__toast-icon svg { fill: #f2b01e; }
+.Toastify__close-button { color: var(--muted, #a29c90); opacity: 0.9; align-self: flex-start; }
+.Toastify__close-button:hover { opacity: 1; }
+@keyframes toast-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes toast-fade-out { from { opacity: 1; } to { opacity: 0; } }
+.toast-fade-in { animation: toast-fade-in 0.15s ease-out both; }
+.toast-fade-out { animation: toast-fade-out 0.15s ease-in both; }
+@media (max-width: 480px) {
+  .Toastify__toast-container--top-right { top: 72px !important; left: 12px !important; right: 12px !important; width: auto !important; padding: 0 !important; }
+  .Toastify__toast { border-radius: 8px; margin-bottom: 8px; }
 }

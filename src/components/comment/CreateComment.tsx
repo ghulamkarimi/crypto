@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useDispatch, useSelector } from "react-redux";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { AppDispatch, RootState } from "../../feature/store";
 import { displayUser } from "../../feature/reducers/userSlice";
-import { useState } from "react";
 import { createCommentApi } from "../../feature/reducers/commentSlice";
 import { NotificationService } from "../../services/notificationServices";
 
@@ -9,106 +12,61 @@ interface ICreateCommentProps {
   components: "post" | "analyze" | "news";
   postIdPublic: string;
 }
-const CreateComment = ({ components, postIdPublic }: ICreateCommentProps) => {
+
+const CreateComment = ({ postIdPublic }: ICreateCommentProps) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const user = useSelector((state: RootState) => displayUser(state, userId!));
-  const [inputValue, setInputValue] = useState("");
-  const { isDarkMode } = useSelector((state: RootState) => state.app);
+  const [value, setValue] = useState("");
+  const [busy, setBusy] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(event.target.value);
-  };
 
-  const handleKeyDown = async (
-    event: React.KeyboardEvent<HTMLInputElement>
-  ) => {
-    if (event.key === "Enter") {
-      console.log("userId", userId);
-      console.log("postIdPublic", postIdPublic);
+  if (!userId) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-lg border border-[var(--line)] bg-[var(--surface)]">
+        <p className="muted">{t("article.loginToComment")}</p>
+        <button type="button" className="btn" onClick={() => navigate("/auth")}>{t("access.login")}</button>
+      </div>
+    );
+  }
 
-      switch (components) {
-        case "post":
-          console.log("post");
-          try {
-            await dispatch(
-              createCommentApi({
-                postIdPublic,
-                post: postIdPublic,
-                comment: inputValue,
-              })
-            ).unwrap();
-            setInputValue("");
-          } catch (error: any) {
-            NotificationService.error(error.message);
-          }
-          break;
-        case "news":
-          try {
-            await dispatch(
-              createCommentApi({
-                postIdPublic,
-                post: postIdPublic,
-                comment: inputValue,
-              })
-            ).unwrap();
-            setInputValue("");
-          } catch (error: any) {
-            NotificationService.error(error.message);
-          }
-          break;
-        case "analyze":
-          try {
-            await dispatch(
-              createCommentApi({
-                postIdPublic,
-                post: postIdPublic,
-                comment: inputValue,
-              })
-            ).unwrap();
-            setInputValue("");
-          } catch (error: any) {
-            NotificationService.error(error.message);
-          }
-          break;
-      }
+  const send = async () => {
+    const comment = value.trim();
+    if (!comment || busy) return;
+    setBusy(true);
+    try {
+      await dispatch(createCommentApi({ postIdPublic, post: postIdPublic, comment })).unwrap();
+      setValue("");
+    } catch (error: any) {
+      NotificationService.error(error.message);
+    } finally {
+      setBusy(false);
     }
   };
+
   return (
-    <div
-      className={`w-full h-fit my-4 rounded-lg font-FONT_VIGA ${
-        // Dynamische Klasse für den Hintergrund basierend auf dem Dark-Mode-Status
-        isDarkMode ? "bg-SECONDARY_BLACK" : "bg-SECONDARY_WHITE"
-      }`}
-    >
-      <div className=" w-full ">
-        <div className="flex gap-2 px-3 py-5 w-full">
-          {/* Profilfoto des Benutzers */}
-          <img
-            className="w-[46px] h-[46px] rounded-full"
-            src={user?.profile_photo}
-            alt=""
-          />
-          {/* Eingabefeld für den Beitrag */}
-          <li
-            className={`!text-[10px] sm:!text-base list-none w-full  ${
-              // Dynamische Klasse für das Eingabefeld basierend auf dem Dark-Mode-Status
-              isDarkMode ? "input-dark" : "input-light"
-            }`}
-            // Platzhaltertext für das Eingabefeld
-          >
-            <input
-              className={`w-full outline-none border-none py-1 px-4 rounded-lg ${
-                isDarkMode ? "bg-SECONDARY_BLACK" : "bg-SECONDARY_WHITE"
-              }`}
-              type="text"
-              value={inputValue}
-              placeholder={` ${user?.firstName}`}
-              onChange={handleChange}
-              onKeyDown={handleKeyDown}
-            />
-          </li>
+    <div className="flex items-start gap-3">
+      <img className="w-10 h-10 rounded-full object-cover flex-none" src={user?.profile_photo} alt="" />
+      <div className="flex-1 min-w-0 flex flex-col gap-2">
+        <textarea
+          className="field"
+          rows={2}
+          value={value}
+          placeholder={t("article.commentPlaceholder")}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              send();
+            }
+          }}
+        />
+        <div>
+          <button type="button" className="btn btn-primary !py-1.5 !px-5 text-sm" onClick={send} disabled={busy || !value.trim()}>
+            {t("article.send")}
+          </button>
         </div>
-        {/* Trennlinie */}
       </div>
     </div>
   );

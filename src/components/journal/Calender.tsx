@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../feature/store";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import JournalSidebar from "./sidebar/JournalSidebar";
 import {
   displayJournals,
@@ -32,35 +33,19 @@ const Calender = ({ month, years }: ICalenderProps) => {
   const firstDayOfMonat = new Date(years, month - 1, 1);
   const lastDayOfMonat = new Date(years, month, 0);
   const dispatch = useDispatch();
-  const firstDayOfMonatArray = firstDayOfMonat.toString().split(" ");
   const lastDayOfMonatArray = lastDayOfMonat.toString().split(" ");
   const { isJournalSideBarActive } = useSelector(
     (state: RootState) => state.app
   );
-  const nameOfWeek = firstDayOfMonatArray[0];
   const lastDay = lastDayOfMonatArray[2];
-  const [index, setIndex] = useState(0);
+  const { i18n } = useTranslation();
+  // Montag = 0 ... Sonntag = 6, direkt berechnet (kein Flackern beim ersten Rendern)
+  const index = (firstDayOfMonat.getDay() + 6) % 7;
+  const setIndex = () => {};
   const [isOpenPositionActive, setIsOpenPositionActive] = useState(false);
-  const nameDayOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-  const startIndex = () => {
-    switch (nameOfWeek) {
-      case "Mon":
-        return setIndex(0);
-      case "Tue":
-        return setIndex(1);
-      case "Wed":
-        return setIndex(2);
-      case "Thu":
-        return setIndex(3);
-      case "Fri":
-        return setIndex(4);
-      case "Sat":
-        return setIndex(5);
-      case "Sun":
-        return setIndex(6);
-    }
-  };
+  const weekdayLabels = Array.from({ length: 7 }, (_, d) =>
+    new Date(2024, 0, 1 + d).toLocaleDateString(i18n.language.startsWith("de") ? "de-DE" : "en-US", { weekday: "short" })
+  );
 
   const renderedComponents = () => {
     const components = [];
@@ -150,11 +135,6 @@ const Calender = ({ month, years }: ICalenderProps) => {
     return components;
   };
 
-  useEffect(() => {
-    startIndex();
-    renderedComponents();
-  }, [index, startIndex, renderedComponents]);
-
   const { isDarkMode } = useSelector((state: RootState) => state.app);
   return (
     <div
@@ -164,7 +144,7 @@ const Calender = ({ month, years }: ICalenderProps) => {
     >
       <div className={`${isOpenPositionActive && "hidden"}`}>
         <div className=" grid grid-cols-7 justify-items-center font-FONT_VIGA uppercase ">
-          {nameDayOfWeek.map((day, index) => (
+          {weekdayLabels.map((day, index) => (
             <div key={index}>
               <p>{day}</p>
             </div>

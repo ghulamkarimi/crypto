@@ -23,6 +23,8 @@ import { displayUser } from "../feature/reducers/userSlice";
 import ForgetPasswordPage from "../pages/ForgetPasswordPage";
 import JournalPricePage from "../pages/JournalPricePage";
 import JournalPositionsPage from "../pages/JournalPositionsPage";
+import LegalPage from "../pages/LegalPage";
+import AccessPage, { VerifyNotice } from "../pages/AccessPage";
 
 
 const useAccountVerification = () => {
@@ -49,7 +51,7 @@ const isUserLogin = () => {
 const RouteGuardLogin = ({ children }: { children: React.ReactNode }) => {
   const userId = isUserLogin();
   if (!userId) {
-    return <HomePage />;
+    return <AccessPage />;
   }
   return children;
 };
@@ -58,7 +60,12 @@ const RouteGuardVerify = ({ children }: { children: React.ReactNode }) => {
   const isVerified = useAccountVerification();
 
   if (!isVerified) {
-    return <AuthenticationPage />;
+    return (
+      <>
+        <VerifyNotice />
+        <AuthenticationPage />
+      </>
+    );
   }
   return children;
 };
@@ -119,6 +126,8 @@ export const router = createBrowserRouter([
           </RouteGuardLogin>
         ),
       },
+      { path: "/imprint", element: <LegalPage kind="imprint" /> },
+      { path: "/privacy", element: <LegalPage kind="privacy" /> },
       {
         path: "/news",
         element: <NewsPage />,

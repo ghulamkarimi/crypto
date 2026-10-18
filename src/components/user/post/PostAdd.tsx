@@ -1,53 +1,27 @@
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { RootState } from "../../../feature/store";
 import { displayUser } from "../../../feature/reducers/userSlice";
-import {
-  setIsPostComponentActive,
-  setIsSpinnerActive,
-} from "../../../feature/reducers/appSlice";
+import { setIsPostComponentActive, setIsSpinnerActive } from "../../../feature/reducers/appSlice";
 
 const PostAdd = () => {
-  // Selektiere den aktuellen Dark-Mode-Status aus dem Redux-Store
-  const { isDarkMode } = useSelector((state: RootState) => state.app);
-  // Hole die Benutzer-ID aus dem lokalen Speicher
+  const { t } = useTranslation();
   const userId = localStorage.getItem("userId");
   const dispatch = useDispatch();
-
-  // Selektiere den Benutzer anhand der Benutzer-ID aus dem Redux-Store
   const user = useSelector((state: RootState) => displayUser(state, userId!));
 
   return (
-    <div
-      className={`w-full h-fit my-4 rounded-lg font-FONT_VIGA cursor-pointer ${
-        // Dynamische Klasse für den Hintergrund basierend auf dem Dark-Mode-Status
-        isDarkMode ? "bg-SECONDARY_BLACK" : "bg-SECONDARY_WHITE"
-      }`}
+    <button
+      type="button"
+      className="w-full my-6 flex items-center gap-4 p-4 text-left rounded-lg border border-[var(--line)] bg-[var(--surface)] hover:bg-[var(--hover)]"
+      onClick={() => {
+        dispatch(setIsPostComponentActive(true));
+        dispatch(setIsSpinnerActive(false));
+      }}
     >
-      <div>
-        <div className="flex gap-2 px-3 py-5">
-          {/* Profilfoto des Benutzers */}
-          <img
-            className="w-[46px] h-[46px] rounded-full"
-            src={user?.profile_photo}
-            alt=""
-          />
-          {/* Eingabefeld für den Beitrag */}
-          <li
-            className={`!text-[10px] sm:!text-base list-none ${
-              // Dynamische Klasse für das Eingabefeld basierend auf dem Dark-Mode-Status
-              isDarkMode ? "input-dark" : "input-light"
-            }`}
-            // Platzhaltertext für das Eingabefeld
-
-            onClick={() => {
-              dispatch(setIsPostComponentActive(true));
-              dispatch(setIsSpinnerActive(false));
-            }}
-          >{`What's on your mind, ${user?.firstName}?`}</li>
-        </div>
-        {/* Trennlinie */}
-      </div>
-    </div>
+      <img className="w-11 h-11 rounded-full object-cover flex-none" src={user?.profile_photo} alt="" />
+      <span className="muted">{t("profile.composer", { name: user?.firstName ?? "" })}</span>
+    </button>
   );
 };
 

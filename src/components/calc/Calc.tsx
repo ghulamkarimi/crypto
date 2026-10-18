@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { FaDollarSign, FaPercent } from "react-icons/fa";
 
-const Calc = () => {
+interface ICalcProps {
+  onLevels?: (levels: { entry: number; stop: number; exit: number; long: boolean }) => void;
+}
+
+const Calc = ({ onLevels }: ICalcProps) => {
   const [formState, setFormState] = useState({
     totalCapital: "",
     risk: "",
@@ -128,6 +132,15 @@ const Calc = () => {
   useEffect(() => {
     calculateRiskMetrics();
   }, [calculateRiskMetrics]);
+
+  useEffect(() => {
+    onLevels?.({
+      entry: parseFloat(formState.entry),
+      stop: parseFloat(formState.stop),
+      exit: parseFloat(formState.exit),
+      long: formState.isBtnLongActive,
+    });
+  }, [formState.entry, formState.stop, formState.exit, formState.isBtnLongActive]);
 
   const convertNumberToStringWithSymbol = (result: string, symbol: string) => {
     return isNaN(parseFloat(result))

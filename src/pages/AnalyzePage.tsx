@@ -2,7 +2,6 @@ import { useDispatch, useSelector } from "react-redux";
 import MaxWithWrapper from "../components/MaxWithWrapper";
 import Analysis from "../components/analyze/Analysis";
 
-import TopSlider from "../components/analyze/TopSlider";
 import CreatePost from "../components/crud/CreatePost";
 import { AppDispatch, RootState } from "../feature/store";
 import DeletePost from "../components/crud/DeletePost";
@@ -11,7 +10,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import Analyze from "../components/analyze/Analize";
 import { useEffect } from "react";
 import { displayanalysis, setAnalyzeId } from "../feature/reducers/analyzeSlice";
-import CoinMarquee from "../components/coins/CoinMarquee";
 
 const AnalyzePage = () => {
   const { isDarkMode, inputValueSearchBox } =
@@ -79,13 +77,8 @@ const AnalyzePage = () => {
             ))}
         </ul>
         </div>
-      <div className="my-4">
-        <CoinMarquee />
       </div>
-        <div className=" text-3xl font-bold font-FONT_VIGA my-4">Top profile analyze</div>
-        <TopSlider />
-      </div>
-      <div className=" my-4">
+      <div>
       {analyzeId === undefined ? <Analysis /> : <Analyze />}
       </div>
       <div

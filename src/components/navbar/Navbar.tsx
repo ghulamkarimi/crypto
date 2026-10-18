@@ -16,9 +16,12 @@ import MaxWithWrapper from "../MaxWithWrapper";
 import { RootState } from "../../feature/store";
 import SearchBox from "../search/SearchBox";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import LanguageSwitch from "./language/LanguageSwitch";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const { isSearchBoxActive } = useSelector((state: RootState) => state.app);
@@ -30,19 +33,19 @@ const Navbar = () => {
   return (
     <MaxWithWrapper className="">
       <div
-        className={`flex gap-2 items-center ${
+        className={`flex gap-2 sm:gap-3 items-center ${
           isSearchBoxActive
             ? "hidden"
             : "bg-transparent flex justify-between items-center"
         }`}
       >
         <HiMiniBars3CenterLeft
-          className="w-8 h-8  lg:hidden cursor-pointer"
+          className="w-7 h-7 sm:w-8 sm:h-8 flex-none lg:hidden cursor-pointer"
           onClick={() => dispatch(setIsSidebarMenuOpen(true))}
         />
-        <div className="w-full grid grid-cols-12 justify-between">
+        <div className="w-full flex items-center justify-between gap-2 min-w-0">
           {/* start nav left */}
-          <div className="col-span-6 flex justify-start items-center gap-4">
+          <div className="flex-1 min-w-0 flex justify-start items-center gap-3 sm:gap-4">
             {/* Branding */}
 
             <Branding />
@@ -56,7 +59,7 @@ const Navbar = () => {
           {/* End Nav Left */}
 
           {/* Start Nav Right */}
-          <div className="flex gap-4 col-span-6 justify-end items-center transition-all duration-300 relative">
+          <div className="flex flex-none gap-3 sm:gap-4 justify-end items-center relative">
             {/* Start Search Icon */}
             <button
               className=""
@@ -66,10 +69,11 @@ const Navbar = () => {
             </button>
             {/* End Search Icon */}
 
-            {/* Start Dark Mode */}
-            <>
+            {/* Sprache und Theme: ab Desktop hier, auf dem Handy im Seitenmenü */}
+            <div className="hidden lg:flex items-center gap-4">
+              <LanguageSwitch />
               <DarkMode />
-            </>
+            </div>
             {/* End Dark Mode */}
             {userId && userId ? (
               <div>
@@ -78,10 +82,10 @@ const Navbar = () => {
             ) : (
               <div>
                 <button
-                  className="btn btn-primary hidden lg:flex"
+                  className="btn btn-primary hidden lg:flex !text-[15px]"
                   onClick={() => navigate("/auth")}
                 >
-                  login / register
+                  {t("nav.loginRegister")}
                 </button>
                 <div
                   className="btn btn-primary lg:hidden"

@@ -1,3 +1,5 @@
+import { authorName } from "../../utils/author";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { displayanalysis } from "../../feature/reducers/analyzeSlice";
 import { useState } from "react";
@@ -32,12 +34,13 @@ const BestAnalysisSlider = () => {
     },
   };
 
+  const { t } = useTranslation();
   return (
     <div>
       <div className="my-4">
-        <h1 className="text-2xl font-bold text-center">TOP ANALYSIS</h1>
+        <h1 className="text-2xl font-bold text-center">{t("home.topAnalysis")}</h1>
         <p className=" text-center pt-2 font-FONT_VIGA ">
-          The best analysis from our users. You can find the best analysis here.
+          {t("home.topAnalysisText")}
         </p>
       </div>
       <Carousel
@@ -71,7 +74,7 @@ const BestAnalysisSlider = () => {
                 <div className="pt-2 flex flex-col text-[10px] text-SECONDARY_GRAY">
                   <ShowTime timestamp={analizeItem.createdAt} />
                   <span className="flex ">
-                    Authour : {user?.firstName} {user?.lastName}
+                    Authour : {authorName(user)}
                   </span>
                 </div>
                 <div>

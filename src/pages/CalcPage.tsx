@@ -1,26 +1,19 @@
-import { useState } from "react";
 import MaxWithWrapper from "../components/MaxWithWrapper";
 import Calc from "../components/calc/Calc";
-import TradingViewWidget from "../components/tradingview/TradingView";
-import Spinner from "../components/Spinner";
+import ChartConsent from "../components/tradingview/ChartConsent";
 
+// Rechner links, TradingView-Chart (Live-Kurse) rechts.
 const CalcPage = () => {
-  const [loading, setLoading] = useState(true); // Start loading
-
-  setTimeout(() => {
-    setLoading(false); // Stop loading
-  }, 2000);
-
   return (
-    <MaxWithWrapper className="min-h-screen mt-12">
-      {loading ? (
-        <Spinner />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <MaxWithWrapper className="min-h-screen py-10">
+      <div className="flex flex-wrap gap-x-12 gap-y-10">
+        <div className="flex-[1_1_420px] min-w-0">
           <Calc />
-          <TradingViewWidget />
         </div>
-      )}
+        <div className="flex-[1_1_480px] min-w-0 min-h-[600px]">
+          <ChartConsent />
+        </div>
+      </div>
     </MaxWithWrapper>
   );
 };

@@ -1,79 +1,55 @@
 import { AppDispatch, RootState } from "../../../feature/store";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  deleteAccountApi,
-  displayUser,
-} from "../../../feature/reducers/userSlice";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { deleteAccountApi, displayUser } from "../../../feature/reducers/userSlice";
 import { NotificationService } from "../../../services/notificationServices";
 import { useNavigate, useParams } from "react-router-dom";
 
 const DeleteAccount = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { isDarkMode } = useSelector((state: RootState) => state.app);
   const userId = localStorage.getItem("userId");
-  const {targetUserId}=useParams()
-  const user = useSelector((state: RootState) =>
-    displayUser(state, userId || "")
-  );
-const navigate=useNavigate()
+  const { targetUserId } = useParams();
+  const user = useSelector((state: RootState) => displayUser(state, userId || ""));
+  const navigate = useNavigate();
+  const [sure, setSure] = useState(false);
+
+  const remove = async () => {
+    try {
+      const response = await dispatch(deleteAccountApi(targetUserId!)).unwrap();
+      localStorage.clear();
+      NotificationService.success(response.message);
+      navigate("/");
+    } catch (error: any) {
+      NotificationService.error(error.message);
+    }
+  };
+
   return (
-    <div
-      className={`py-4 px-4 h-fit font-FONT_VIGA ${
-        isDarkMode ? "bg-SECONDARY_BLACK" : "bg-SECONDARY_WHITE "
-      }`}
-    >
-      <h1 className="text-4xl pt-6 font-bold font-FONT_VIGA text-PRIMARY_RED">
-        Delete Account
-      </h1>
-      <div
-        className={`border-b py-4 text-xl ${
-          isDarkMode ? "bg-black" : "border-SECONDARY_GRAY"
-        }`}
-      />
-      <div className="py-8 flex items-center gap-4">
-        <img
-          className="w-24 h-24 rounded-full"
-          src={user.profile_photo}
-          alt=""
-        />
-        <span className="flex items-center gap-1 text-lg">
-          <p>{user.firstName}</p>
-          <p>{user.lastName}</p>
-        </span>
+    <section className="flex flex-col gap-8 max-w-xl">
+      <div className="section-head">
+        <h2 className="text-SECONDARY_RED">{t("profile.deleteTitle")}</h2>
       </div>
-
-      <p className="font-bold text-lg">Email: {user.email}</p>
-
-      <div className="pt-6 flex items-center gap-4">
-        <button
-          className="btn btn-primary"
-          onClick={() => (window.location.href = "/edit-profile")}
-        >
-          CANCLE
-        </button>
-        <button
-          className=" btn-delete "
-          onClick={async () => {
-            console.log("targetUserId",targetUserId);
-            try {
-              const response = await dispatch(
-                deleteAccountApi(targetUserId!)
-              ).unwrap();
-              localStorage.clear()
-              NotificationService.success(response.message);
-              navigate("/")
-            } catch (error: any) {
-              NotificationService.error(error.message);
-            }
-          }}
-        >
-          DELETE
-        </button>
+      <div className="flex items-center gap-4">
+        <img className="w-16 h-16 rounded-full object-cover" src={user?.profile_photo} alt="" />
+        <div className="min-w-0">
+          <p className="font-medium">{user?.firstName} {user?.lastName}</p>
+          <p className="muted text-sm break-all">{user?.email}</p>
+        </div>
       </div>
-      <div className="w-full h-[200px]">
-
+      <p className="leading-7">{t("profile.deleteWarn")}</p>
+      <div className="flex flex-wrap gap-3">
+        {!sure ? (
+          <button type="button" className="btn-delete" onClick={() => setSure(true)}>{t("profile.deleteAsk")}</button>
+        ) : (
+          <>
+            <button type="button" className="btn-delete" onClick={remove}>{t("profile.deleteConfirm")}</button>
+            <button type="button" className="btn" onClick={() => setSure(false)}>{t("profile.cancel")}</button>
+          </>
+        )}
       </div>
-    </div>
+    </section>
   );
 };
 

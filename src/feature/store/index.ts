@@ -37,13 +37,13 @@ export const store = configureStore({
 
 axiosJWT.interceptors.request.use(
   async (config) => {
-    const currentDate = new Date();
-    const exp = localStorage.getItem("exp");
-    if (Number(exp) * 1000 > currentDate.getDate()) {
+    // Vor jeder geschützten Anfrage ein frisches Token holen (gültig nur 30 s).
+    try {
       const response = await refreshToken();
       config.headers.Authorization = `Bearer ${response.data.refreshToken}`;
       store.dispatch(setToken(response.data.refreshToken));
-      // store.dispatch(setUserInfoRefresh(response.data.userInfo_refresh));
+    } catch {
+      /* nicht angemeldet: Anfrage ohne Token, der Server antwortet mit 401 */
     }
     return config;
   },

@@ -7,6 +7,7 @@ import {
   setIsJournalPositionOpenEditActive,
 } from "../../feature/reducers/journalSlice";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import EditInitiateTrade from "./sidebar/EditInitiateTrade";
 
 
@@ -22,114 +23,62 @@ const Position = () => {
   } = useSelector((state: RootState) => state.journals);
   const { isDarkMode } = useSelector((state: RootState) => state.app);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const journal = useSelector((state: RootState) =>
     displayJournal(state, journalId)
   );
 
-  return (
-    <div className="w-full min-h-screen flex flex-col items-center relative  ">
-      <div
-        className={`flex flex-col gap-1 ${
-          isDarkMode ? " bg-SECONDARY_BLACK" : " bg-SECONDARY_WHITE"
-        } py-12 h-fit my-12 rounded-lg px-6 w-full `}
-      >
-        <div
-          className={`
-            px-12 py-8 rounded-lg font-FONT_VIGA cursor-pointer text-xs sm:text-lg  flex flex-col gap-4`}
-        >
-          <table className="">
-            <thead className=" border-b-2 ">
-              <tr className=" ">
-                <th className="py-2  text-start text-PRIMARY_BLUE font-FONT_VIGA w-1/2">
-                  Description
-                </th>
-                <th className="py-2 w-1/2 text-start text-PRIMARY_BLUE font-FONT_VIGA">
-                  Value
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="py-2">Base/Quote Coin</td>
-                <td className="py-2">
-                  {journal?.baseCoin}/{journal?.quoteCoin}
-                </td>
-              </tr>
-              <tr>
-                <td className="py-2">Trade Type</td>
-                <td className="py-2">{journal?.tradeType}</td>
-              </tr>
-              <tr>
-                <td className="py-2">Start Time</td>
-                <td className="py-2">{journal?.startTime}</td>
-              </tr>
-              <tr>
-                <td className="py-2">Start Date</td>
-                <td className="py-2">{journal?.startDate}</td>
-              </tr>
-              <tr>
-                <td className="py-2">Price</td>
-                <td className="py-2">$ {journal?.price}</td>
-              </tr>
-              <tr>
-                <td className="py-2">Take Profit</td>
-                <td className="py-2">$ {journal?.takeProfit}</td>
-              </tr>
-              <tr>
-                <td className="py-2">Stop Loss</td>
-                <td className="py-2">$ {journal?.stopLoss}</td>
-              </tr>
-              <tr>
-                <td className="py-2">Risk & Reward</td>
-                <td className="py-2">{journal?.riskReward}</td>
-              </tr>
-            </tbody>
-          </table>
-          <div>
-            <div className=" flex flex-col ">
-              <p className={`py-2 w-full text-center text-PRIMARY_GRAY `}>
-                Reasons for Entry
-              </p>
-              <p className="py-2">{journal?.reasonsforEntry}</p>
-            </div>
-          </div>
-        </div>
+  const rows: [string, string][] = [
+    [t("journalPage.pair"), `${journal?.baseCoin}/${journal?.quoteCoin}`],
+    [t("journalPage.type"), String(journal?.tradeType ?? "")],
+    [t("journalPage.startTime"), String(journal?.startTime ?? "")],
+    [t("journalPage.startDate"), String(journal?.startDate ?? "")],
+    [t("journalPage.price"), `$ ${journal?.price}`],
+    [t("journalPage.takeProfit"), `$ ${journal?.takeProfit}`],
+    [t("journalPage.stopLoss"), `$ ${journal?.stopLoss}`],
+    [t("journalPage.riskReward"), String(journal?.riskReward ?? "")],
+  ];
 
-        <div className="flex gap-4">
-          <button
-            className="px-7 py-1 bg-SECONDARY_RED rounded-lg my-2"
-            onClick={() => {
-              dispatch(setIsDeleteJournalPositionActive(true));
-            }}
-          >
-            Delete
-          </button>
-          <button
-            className="px-7 py-1 bg-SECONDARY_ORANGE rounded-lg my-2"
-            onClick={() => {
-              dispatch(setIsJournalPositionOpenEditActive(true));
-            }}
-          >
-            Edit
-          </button>
-          <button
-            className="px-7 py-1 bg-SECONDARY_GREEN rounded-lg my-2"
-            onClick={() => {
-              dispatch(setIsClosePositionJournalActive(true));
-            }}
-          >
-            Close Position
-          </button>
-          <button
-            className="btn btn-primary my-2"
-            onClick={() => {
-              navigate("/positions");
-            }}
-          >
-            Back
-          </button>
-        </div>
+  return (
+    <div className="w-full flex flex-col relative">
+      <div className="section-head">
+        <h2>
+          {journal?.baseCoin}/{journal?.quoteCoin}
+        </h2>
+        <button
+          type="button"
+          className="text-[15px] muted hover:text-PRIMARY_ORANGE"
+          onClick={() => navigate("/positions")}
+        >
+          {t("journalPage.back")}
+        </button>
+      </div>
+
+      <dl>
+        {rows.map(([label, value]) => (
+          <div key={label} className="row-line flex justify-between gap-4 py-3">
+            <dt className="muted">{label}</dt>
+            <dd className="font-medium tabular-nums text-right capitalize">{value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="py-6 max-w-[65ch]">
+        <h4 className="mb-2">{t("journalPage.reasons")}</h4>
+        <p className="muted leading-7">{journal?.reasonsforEntry}</p>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <button className="btn btn-primary" onClick={() => dispatch(setIsClosePositionJournalActive(true))}>
+          {t("journalPage.closePosition")}
+        </button>
+        <button className="btn" onClick={() => dispatch(setIsJournalPositionOpenEditActive(true))}>
+          {t("journalPage.edit")}
+        </button>
+        <button className="btn-delete" onClick={() => dispatch(setIsDeleteJournalPositionActive(true))}>
+          {t("journalPage.delete")}
+        </button>
       </div>
       <div
         className={`sm:bg-DARK_BLUE/80 backdrop-blur-sm w-full h-screen fixed inset-0 z-50 ${

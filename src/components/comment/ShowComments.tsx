@@ -1,187 +1,107 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useDispatch, useSelector } from "react-redux";
-import {
-  deleteCommentApi,
-  displayComments,
-  editCommentApi,
-} from "../../feature/reducers/commentSlice";
-import { AppDispatch, RootState } from "../../feature/store";
-import { IoCloseSharp } from "react-icons/io5";
-import { MdOutlineCheck } from "react-icons/md";
-import { NotificationService } from "../../services/notificationServices";
 import { useState } from "react";
-import { CiEdit } from "react-icons/ci";
+import { useTranslation } from "react-i18next";
+import { deleteCommentApi, displayComments, editCommentApi } from "../../feature/reducers/commentSlice";
+import { displayUsers } from "../../feature/reducers/userSlice";
+import { AppDispatch } from "../../feature/store";
+import { NotificationService } from "../../services/notificationServices";
+import { authorName } from "../../utils/author";
 
 interface IShowProps {
   components: "analyze" | "news" | "post";
   postIdPublic: string;
 }
 
+const LIMIT = 300;
+
 const ShowComments = ({ postIdPublic }: IShowProps) => {
-  const allComments = useSelector(displayComments);
-  const comments = allComments.filter(
-    (comment) => comment.post === postIdPublic
-  );
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
+  const comments = useSelector(displayComments).filter((c) => c.post === postIdPublic);
+  const users = useSelector(displayUsers);
   const userId = localStorage.getItem("userId") || "";
-  const { isDarkMode } = useSelector((state: RootState) => state.app);
-  const [TextAreaValue, setTextAreaValue] = useState("");
-  const [editStates, setEditStates] = useState<{ [key: string]: boolean }>({});
-  const [showTextArea, setShowTextArea] = useState<{ [key: string]: boolean }>(
-    {}
-  );
+  const isAdmin = !!users.find((u) => u._id === userId)?.isAdmin;
 
-  const handleEditClick = (commentId: string) => {
-    setEditStates((prevEditStates) => ({
-      ...prevEditStates,
-      [commentId]: !prevEditStates[commentId],
-    }));
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const save = async (comment: any) => {
+    try {
+      const response = await dispatch(
+        editCommentApi({ targetUser: comment.user?._id, commentIdPublic: comment._id, comment: draft })
+      ).unwrap();
+      NotificationService.success(response.message);
+      setEditingId(null);
+    } catch (error: any) {
+      NotificationService.error(error.message);
+    }
   };
 
-  const handleShowTextArea = (commentId: string) => {
-    setShowTextArea((prevShowTextArea) => ({
-      ...prevShowTextArea,
-      [commentId]: !prevShowTextArea[commentId],
-    }));
+  const remove = async (comment: any) => {
+    try {
+      await dispatch(deleteCommentApi({ targetUser: comment.user?._id, commentIdPublic: comment._id })).unwrap();
+    } catch (error: any) {
+      NotificationService.error(error.message);
+    }
   };
 
-  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setTextAreaValue(event.target.value);
-  };
+  if (!comments.length) return <p className="muted">{t("article.noComments")}</p>;
+
   return (
-    <div className="w-full max-h-[500px] overflow-y-auto overflow-x-hidden flex flex-col items-center gap-4 p-2 my-6">
-      {comments.map((comment) => (
-        <div
-          key={comment._id}
-          className={`w-full shadow-lg border-b-2 last:border-none flex flex-col gap-2 odd:mr-8 rounded-md px-2 ${
-            userId === comment?.user?._id && isDarkMode
-              ? "bg-DARK_SLATE "
-              : userId === comment?.user?._id && !isDarkMode
-              ? "bg-LIGHT_BLUE "
-              : userId !== comment?.user?._id && isDarkMode
-              ? " bg-SECONDARY_BLACK"
-              : " bg-SECONDARY_WHITE "
-          }
-   `}
-        >
-          <div className="flex justify-between p-2">
-            <div className="flex items-center gap-2">
-              <img
-                className="w-10 rounded-full"
-                src={comment?.user?.profile_photo}
-                alt=""
-              />
-              <p>
-                {comment?.user?.firstName} {comment?.user?.lastName}
-              </p>
-            </div>
-            <div className="flex items-center gap-4 text-xl">
-              <div
-                className={`flex items-center gap-4 text-xl ${
-                  editStates[comment._id] ? "hidden" : "flex"
-                }`}
-              >
-                <CiEdit
-                  onClick={() => {
-                    setTextAreaValue(comment.comment);
-                    handleEditClick(comment._id);
-                  }}
-                  className="cursor-pointer hover:text-SECONDARY_BLUE hover:text-2xl"
-                />
+    <ul className="flex flex-col">
+      {comments.map((comment: any) => {
+        const own = userId === comment?.user?._id;
+        const long = comment.comment.length > LIMIT;
+        const open = expanded[comment._id];
+        return (
+          <li key={comment._id} className="row-line flex gap-3 py-4">
+            <img className="w-10 h-10 rounded-full object-cover flex-none" src={comment?.user?.profile_photo} alt="" />
+            <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-medium truncate">{authorName(comment?.user)}</span>
+                {(own || isAdmin) && editingId !== comment._id && (
+                  <div className="flex gap-3 text-sm flex-none">
+                    {own && (
+                      <button type="button" className="muted hover:text-PRIMARY_ORANGE" onClick={() => { setDraft(comment.comment); setEditingId(comment._id); }}>
+                        {t("common.edit")}
+                      </button>
+                    )}
+                    <button type="button" className="muted hover:text-SECONDARY_RED" onClick={() => remove(comment)}>
+                      {t("common.delete")}
+                    </button>
+                  </div>
+                )}
+              </div>
 
-                <IoCloseSharp
-                  onClick={async () => {
-                    try {parent
-                      await dispatch(
-                        deleteCommentApi({
-                          targetUser: comment.user?._id,
-                          commentIdPublic: comment._id,
-                        })
-                      ).unwrap();
-                    } catch (error: any) {
-                      NotificationService.error(error.message);
-                    }
-                  }}
-                  className="cursor-pointer hover:text-SECONDARY_RED hover:text-2xl"
-                />
-              </div>
-              <div>
-                <MdOutlineCheck
-                  onClick={async () => {
-                    const data = {
-                      targetUser: comment.user?._id,
-                      commentIdPublic: comment._id,
-                      comment: TextAreaValue,
-                    };
-                    try {
-                      const response = await dispatch(
-                        editCommentApi(data)
-                      ).unwrap();
-                      NotificationService.success(response.message);
-                      console.log("response", response);
-                      setEditStates((prevEditStates) => ({
-                        ...prevEditStates,
-                        [comment._id]: false,
-                      }));
-                    } catch (error: any) {
-                      NotificationService.error(error.message);
-                    }
-                  }}
-                  className={`cursor-pointer hover:text-SECONDARY_GREEN hover:text-2xl ${
-                    editStates[comment._id] ? "flex" : "hidden"
-                  }`}
-                />
-              </div>
-            </div>
-          </div>
-          <div
-            className="py-2 px-4 "
-          >
-            <div
-              className={`flex flex-col ${
-                editStates[comment._id] ? "hidden" : "flex"
-              }`}
-            >
-              {showTextArea[comment._id] ? (
-                (console.log(showTextArea[comment._id]),
-                (
-                  <p>
-                    {comment.comment}{" "}
-                    <span
-                      onClick={() => handleShowTextArea(comment._id)}
-                      className="underline cursor-pointer font-bold"
-                    >
-                      See Less
-                    </span>
-                  </p>
-                ))
+              {editingId === comment._id ? (
+                <>
+                  <textarea className="field" rows={3} value={draft} onChange={(e) => setDraft(e.target.value)} />
+                  <div className="flex gap-3">
+                    <button type="button" className="btn btn-primary !py-1.5 !px-4 text-sm" onClick={() => save(comment)} disabled={!draft.trim()}>
+                      {t("article.save")}
+                    </button>
+                    <button type="button" className="btn !py-1.5 !px-4 text-sm" onClick={() => setEditingId(null)}>
+                      {t("article.cancel")}
+                    </button>
+                  </div>
+                </>
               ) : (
-                <p>
-                  {comment.comment.slice(0, 200)}...
-                  {comment.comment.length > 200 && (
-                    <span
-                      onClick={() => handleShowTextArea(comment._id)}
-                      className="underline cursor-pointer font-bold"
-                    >
-                      See More
-                    </span>
+                <p className="leading-7 whitespace-pre-line break-words">
+                  {long && !open ? `${comment.comment.slice(0, LIMIT)} …` : comment.comment}
+                  {long && (
+                    <button type="button" className="ml-2 underline underline-offset-4 muted hover:text-PRIMARY_ORANGE" onClick={() => setExpanded({ ...expanded, [comment._id]: !open })}>
+                      {open ? t("article.showLess") : t("article.showMore")}
+                    </button>
                   )}
                 </p>
               )}
             </div>
-            <p className={` ${editStates[comment._id] ? "flex" : "hidden"}`}>
-              <textarea
-                onChange={handleChange}
-                value={TextAreaValue}
-                className="w-full line-clamp-3 p-2 overflow-y-auto outline-none font-FONT_SALSA h-fit"
-                rows={10}
-                cols={10}
-              />
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 };
 

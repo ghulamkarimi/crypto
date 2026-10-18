@@ -1,64 +1,41 @@
-import { useDispatch, useSelector } from "react-redux"; // Redux-Hooks importieren
-import { AppDispatch, RootState } from "../../../feature/store"; // Typen für Dispatch und Root State importieren
-import {
-  displayUser,
-  editProfileUserApi,
-  setFile,
-} from "../../../feature/reducers/userSlice"; // Redux-Aktionen und Reduzierer importieren
-import { useFormik } from "formik"; // useFormik-Hook für Formularverwaltung importieren
-import * as Yup from "yup"; // Yup für Formularvalidierung importieren
-import { NotificationService } from "../../../services/notificationServices"; // Benachrichtigungsservice importieren
-import { useNavigate } from "react-router"; // useNavigate-Hook für die Navigation importieren
-import { useRef, useState } from "react"; // useRef und useState importieren
-import { Image } from "../../image/Image"; // Bildkomponente importieren
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../../feature/store";
+import { displayUser, editProfileUserApi, setFile } from "../../../feature/reducers/userSlice";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { useTranslation } from "react-i18next";
+import { NotificationService } from "../../../services/notificationServices";
+import { useNavigate } from "react-router";
+import { useRef, useState } from "react";
+import { Image } from "../../image/Image";
 
 const EditProfileInfo = () => {
+  const { t } = useTranslation();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [image, setImage] = useState(false);
 
-  const { isDarkMode } = useSelector((state: RootState) => state.app); // Dunkler Modus aus dem Redux-Zustand abrufen
-  const dispatch = useDispatch<AppDispatch>(); // Dispatch-Funktion abrufen
-  const navigate = useNavigate(); // Navigationsservice abrufen
-  const inputRef = useRef<HTMLInputElement | null>(null); // Ref für Dateieingabefeld erstellen
-  const [image, setImage] = useState(false); // Zustand für das hochgeladene Bild
-
-
-  // Funktion zum Handhaben des Dateiwechsels
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files !== null && e.target.files.length > 0) {
-      const selectedFile = e.target.files[0];
-      dispatch(setFile(selectedFile)); // Datei im Redux-Zustand festlegen
-      setImage(true); // Zustand aktualisieren, um das Bild anzuzeigen
-    }
+    const picked = e.target.files?.[0];
+    e.target.value = ""; // dieselbe Datei darf erneut gewählt werden
+    if (!picked) return;
+    if (!picked.type.startsWith("image/")) return NotificationService.error(t("profile.imgBadType"));
+    if (picked.size > 8_000_000) return NotificationService.error(t("profile.imgTooBig"));
+    dispatch(setFile(picked));
+    setImage(true);
   };
 
-  // Funktion zum Auslösen des Klicks auf das Dateieingabefeld
-  const handleClick = () => {
-    if (inputRef.current !== null) {
-      inputRef.current.click();
-    }
-  };
-
-  // Benutzer-ID aus dem lokalen Speicher abrufen
   const userId = localStorage.getItem("userId");
-  const user = useSelector((state: RootState) =>
-    displayUser(state, userId || "")
-  );
+  const user = useSelector((state: RootState) => displayUser(state, userId || ""));
 
   const formSchema = Yup.object({
-    firstName: Yup.string()
-      .required("First name is required")
-      .matches(/^[A-Za-z]+$/, "Only alphabets are allowed in first name"),
-
-    lastName: Yup.string()
-      .required("Last name is required")
-      .matches(/^[A-Za-z]+$/, "Only alphabets are allowed in last name"),
-
-    bio: Yup.string()
-      .min(10, "Die Beschreibung muss mindestens 10 Zeichen lang sein")
-      .required("Eine Beschreibung ist erforderlich"),
+    firstName: Yup.string().required(t("profile.vFirst")).matches(/^[A-Za-zÄÖÜäöüß]+$/, t("profile.vFirstChars")),
+    lastName: Yup.string().required(t("profile.vLast")).matches(/^[A-Za-zÄÖÜäöüß]+$/, t("profile.vLastChars")),
+    bio: Yup.string().min(10, t("profile.vBioMin")).required(t("profile.vBio")),
     gender: Yup.string().oneOf(["male", "female", "diverse"]),
   });
 
-  // useFormik-Hook verwenden, um das Formular zu verwalten
   const formik = useFormik({
     initialValues: {
       firstName: user?.firstName,
@@ -66,162 +43,87 @@ const EditProfileInfo = () => {
       bio: user?.bio,
       gender: user?.gender,
     },
-
     onSubmit: async (values) => {
       try {
-        // Profilaktualisierung durchführen und Erfolgsnachricht anzeigen
         const response = await dispatch(editProfileUserApi(values)).unwrap();
-        console.log("response", response);
         NotificationService.success(response.message);
-
-        setTimeout(() => {
-          navigate(`/profile/${userId}`);
-
-        }, 3000);
+        setTimeout(() => navigate(`/profile/${userId}`), 1500);
       } catch (error: any) {
-        // Fehler anzeigen, wenn die Aktualisierung fehlschlägt
         NotificationService.error(error.message);
       }
     },
-
-    validationSchema: formSchema, // Validierungsschema festlegen
+    validationSchema: formSchema,
   });
 
-  // JSX-Komponente rendern
+  const err = (name: "firstName" | "lastName" | "bio") =>
+    formik.touched[name] && formik.errors[name] ? (
+      <p className="text-sm text-SECONDARY_RED mt-1">{formik.errors[name] as string}</p>
+    ) : null;
+
+  const genders = [
+    { value: "male", label: t("profile.male") },
+    { value: "female", label: t("profile.female") },
+    { value: "diverse", label: t("profile.diverse") },
+  ];
+
   return (
-    <div
-      className={`w-full p-4 h-fit flex justify-center items-center rounded-lg ${
-        isDarkMode ? " bg-SECONDARY_BLACK" : "bg-SECONDARY_WHITE "
-      }`}
-    >
-      <div className="w-full text-left">
-        <div className="flex items-start flex-col gap-2">
-          <h1 className="text-4xl font-bold font-FONT_VIGA mb-7">Profile</h1>
-          <p className="font-bold">Email: {user?.email}</p>
-
-          {/* Abschnitt für Profilbild */}
-          <div className="mb-5 flex gap-3 items-center">
-            <img
-              className="w-24 h-24 rounded-full text-xl"
-              src={user?.profile_photo}
-              alt=""
-            />
-            <div className="flex items-cente btn btn-primary cursor-pointer ">
-              <button onClick={handleClick}>change photo</button>
-              <input
-                name="file"
-                className="cursor-pointer"
-                type="file"
-                hidden
-                ref={inputRef}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Abschnitt für Bildvorschau */}
-        <div className={`${image ? "flex" : "hidden"}`}>
-          <Image image={image} setImage={setImage} />
-        </div>
-
-        {/* Trennlinie */}
-        <div
-          className={`border border-1  w-full mx-auto text-xl ${
-            isDarkMode ? "bg-black" : "border-SECONDARY_GRAY"
-          }`}
-        />
-
-        {/* Formular zur Bearbeitung des Profils */}
-        <form onSubmit={formik.handleSubmit}>
-          <div className="w-full mt-3 flex flex-col items-start justify-start gap-2">
-            <input
-              name="firstName"
-              type="text"
-              defaultValue={formik.values.firstName}
-              className={`  ${isDarkMode ? " input-dark" : "input-light"}`}
-              placeholder="firstName"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            />
-            <input
-              name="lastName"
-              type="text"
-              defaultValue={formik.values.lastName}
-              className={`input  ${isDarkMode ? " input-dark" : "input-light"}`}
-              placeholder="lastName"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            />
-            <textarea
-              className={`  ${isDarkMode ? " input-dark" : "input-light"}`}
-              name="bio"
-              placeholder="Write something about yourself"
-              id=""
-              cols={30}
-              rows={10}
-              defaultValue={formik.values.bio}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            ></textarea>
-          </div>
-
-          {/* Abschnitt für das Geschlecht */}
-          <div className="w-2/3 mt-4">
-            <fieldset>
-              <div className="flex items-center gap-10 mt-2 font-bold font-FONT_VIGA text-lg">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    className="mr-2 cursor-pointer w-5 h-5"
-                    name="gender"
-                    defaultValue="male"
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    checked={formik.values.gender === "male"}
-                  />
-                  Male
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    className="mr-2 cursor-pointer w-5 h-5 "
-                    name="gender"
-                    defaultValue="female"
-                    checked={formik.values.gender === "female"}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                  />
-                  Female
-                </label>
-                <label className="flex items-center ">
-                  <input
-                    type="radio"
-                    className="mr-2 cursor-pointer w-5 h-5 "
-                    name="gender"
-                    defaultValue="diverse"
-                    checked={formik.values.gender === "diverse"}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                  />
-                  Diverse
-                </label>
-              </div>
-            </fieldset>
-          </div>
-
-          {/* Abschnitt für Fehleranzeige */}
-          <div className="w-1/3 mt-7">
-            <button
-              type="submit"
-              className="bg-green-500 hover:bg-green-700 text-white font-bold font-FONT_VIGA text-lg py-2 px-4 w-full rounded"
-            >
-              Save
-            </button>
-          </div>
-        </form>
+    <section className="flex flex-col gap-8 max-w-2xl">
+      <div className="section-head">
+        <h2>{t("profile.profileTitle")}</h2>
       </div>
-    </div>
+
+      <div className="flex flex-wrap items-center gap-5">
+        <img className="w-24 h-24 rounded-full object-cover" src={user?.profile_photo} alt="" />
+        <div className="flex flex-col items-start gap-2">
+          <p className="muted text-sm break-all">{t("profile.email")}: {user?.email}</p>
+          <button type="button" className="btn" onClick={() => inputRef.current?.click()}>
+            {t("profile.changePhoto")}
+          </button>
+          <input name="file" type="file" hidden ref={inputRef} onChange={handleChange} />
+        </div>
+      </div>
+
+      <div className={`${image ? "flex" : "hidden"}`}>
+        <Image image={image} setImage={setImage} />
+      </div>
+
+      <form onSubmit={formik.handleSubmit} className="flex flex-col gap-5">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label className="field-label" htmlFor="firstName">{t("profile.firstName")}</label>
+            <input id="firstName" name="firstName" type="text" className="field mt-1" value={formik.values.firstName ?? ""} onChange={formik.handleChange} onBlur={formik.handleBlur} />
+            {err("firstName")}
+          </div>
+          <div>
+            <label className="field-label" htmlFor="lastName">{t("profile.lastName")}</label>
+            <input id="lastName" name="lastName" type="text" className="field mt-1" value={formik.values.lastName ?? ""} onChange={formik.handleChange} onBlur={formik.handleBlur} />
+            {err("lastName")}
+          </div>
+        </div>
+
+        <div>
+          <label className="field-label" htmlFor="bio">{t("profile.bio")}</label>
+          <textarea id="bio" name="bio" rows={6} className="field mt-1" placeholder={t("profile.bioPlaceholder")} value={formik.values.bio ?? ""} onChange={formik.handleChange} onBlur={formik.handleBlur} />
+          {err("bio")}
+        </div>
+
+        <fieldset>
+          <legend className="field-label">{t("profile.gender")}</legend>
+          <div className="flex flex-wrap gap-x-8 gap-y-2 mt-2">
+            {genders.map((g) => (
+              <label key={g.value} className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" className="w-4 h-4 accent-[#f2b01e]" name="gender" value={g.value} checked={formik.values.gender === g.value} onChange={formik.handleChange} onBlur={formik.handleBlur} />
+                {g.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div>
+          <button type="submit" className="btn btn-primary !px-8">{t("profile.save")}</button>
+        </div>
+      </form>
+    </section>
   );
 };
 

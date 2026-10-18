@@ -1,6 +1,5 @@
 import React from "react";
-import { IoArrowBackCircleOutline, IoArrowForwardCircleOutline } from "react-icons/io5";
-import InputPerPagePagination from "./InputPerPagePagination";
+import { useTranslation } from "react-i18next";
 
 interface PaginationProps {
   perPage: number;
@@ -15,99 +14,44 @@ const Pagination: React.FC<PaginationProps> = ({
   currentPage,
   onPageChange,
 }) => {
+  const { t } = useTranslation();
   const totalPages = Math.ceil(totalItems / perPage);
+  if (totalItems <= perPage) return null;
 
-  const next = () => {
-    if (currentPage < totalPages) {
-      onPageChange(currentPage + 1);
-    }
-  };
+  const go = (page: number) => onPageChange(Math.min(Math.max(page, 1), totalPages));
 
-  const prev = () => {
-    if (currentPage > 1) {
-      onPageChange(currentPage - 1);
-    }
-  };
+  const pages: number[] = [];
+  const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+  for (let p = start; p <= Math.min(totalPages, start + 4); p++) pages.push(p);
 
-  const multiStepNext = () => {
-    const nextAfterMultiStep = currentPage + 3;
-    onPageChange(nextAfterMultiStep > totalPages ? totalPages : nextAfterMultiStep);
-  };
+  const base = "min-w-9 h-9 px-2 rounded flex items-center justify-center tabular-nums transition-colors";
 
-  const multiStepPrev = () => {
-    const prevAfterMultiStep = currentPage - 3;
-    onPageChange(prevAfterMultiStep < 1 ? 1 : prevAfterMultiStep);
-  };
-
-  if (totalItems > perPage) {
-    return (
-      <div className="flex items-center justify-center">
-      <InputPerPagePagination totalPages={totalPages} onPageChange={onPageChange} />
-        <ul className="flex items-center justify-end text-sm">
-          <li className="flex items-center">
-            <button className="outline-0 hover:text-cyan w-8" onClick={prev}>
-              <IoArrowBackCircleOutline className="w-full h-auto" />
-            </button>
-          </li>
-          {/* Render multi step previous button */}
-          {currentPage > 3 && (
-            <li>
-              <button
-                onClick={multiStepPrev}
-                className="outline-0 hover:text-cyan rounded-full w-5 h-5 flex items-center justify-center text-lg mx-1.5"
-              >
-                ...
-              </button>
-            </li>
-          )}
-          {/* Render page numbers */}
-          {Array.from({ length: Math.min(totalPages, 5) }, (_, index) => currentPage - 2 + index).map((pageNumber) => (
-            pageNumber > 0 && pageNumber <= totalPages && (
-              <li key={pageNumber}>
-                <button
-                  onClick={() => onPageChange(pageNumber)}
-                  className={`outline-0 hover:text-cyan rounded-full w-5 h-5 md:w-8 md:h-8 flex items-center justify-center mx-1.5 ${
-                    pageNumber === currentPage ? "bg-gray-700 text-gray-400" : "bg-green-300 text-gray-800" // Ändere die Hintergrundfarbe hier
-                  }`}
-                >
-                  {pageNumber}
-                </button>
-              </li>
-            )
-          ))}
-          {/* Render multi step next button */}
-          {currentPage + 3 < totalPages && (
-            <li>
-              <button
-                onClick={multiStepNext}
-                className="outline-0 hover:text-cyan rounded-full w-5 h-5 flex items-center justify-center text-lg mx-1.5"
-              >
-                ...
-              </button>
-            </li>
-          )}
-          {/* Render last page button */}
-          {currentPage !== totalPages && (
-            <li>
-              <button
-                onClick={() => onPageChange(totalPages)}
-                className={`outline-0 hover:text-cyan rounded-full w-5 h-5 flex items-center justify-center mx-1.5 bg-red-400`}
-              >
-                {totalPages}
-              </button>
-            </li>
-          )}
-          <li className="flex items-center">
-            <button className="outline-0 hover:text-cyan w-8" onClick={next}>
-              <IoArrowForwardCircleOutline className="w-full h-auto" />
-            </button>
-          </li>
-        </ul>
-      </div>
-    );
-  } else {
-    return null;
-  }
+  return (
+    <nav className="flex items-center gap-1 text-sm" aria-label={t("pagination.label")}>
+      <button className={`${base} hover:text-PRIMARY_ORANGE disabled:opacity-40`} onClick={() => go(currentPage - 1)} disabled={currentPage === 1}>
+        {t("pagination.prev")}
+      </button>
+      {pages.map((p) => (
+        <button
+          key={p}
+          onClick={() => go(p)}
+          aria-current={p === currentPage ? "page" : undefined}
+          className={`${base} ${p === currentPage ? "bg-PRIMARY_ORANGE text-BLACK font-semibold" : "hover:bg-[var(--hover)]"}`}
+        >
+          {p}
+        </button>
+      ))}
+      {pages[pages.length - 1] < totalPages && (
+        <>
+          <span className="muted px-1">…</span>
+          <button className={`${base} hover:bg-[var(--hover)]`} onClick={() => go(totalPages)}>{totalPages}</button>
+        </>
+      )}
+      <button className={`${base} hover:text-PRIMARY_ORANGE disabled:opacity-40`} onClick={() => go(currentPage + 1)} disabled={currentPage === totalPages}>
+        {t("pagination.next")}
+      </button>
+    </nav>
+  );
 };
 
 export default Pagination;

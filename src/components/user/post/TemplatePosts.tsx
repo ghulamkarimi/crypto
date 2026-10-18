@@ -1,22 +1,19 @@
-import { IoMdClose } from "react-icons/io";
-import { BiDislike, BiSolidLike } from "react-icons/bi";
-import { BiLike } from "react-icons/bi";
-import { FaComment } from "react-icons/fa6";
+import { BiDislike, BiLike } from "react-icons/bi";
 import { FaRegComment } from "react-icons/fa";
+import { IoEyeOutline } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../../../feature/store";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { AppDispatch } from "../../../feature/store";
 import { displayUsers } from "../../../feature/reducers/userSlice";
 import { IPost } from "../../../interface";
 import ShowTime from "../../showTime/ShowTime";
-import { CiEdit } from "react-icons/ci";
 import {
   setIsDeleteComponentActive,
   setIsEditComponentActive,
   setIsSpinnerActive,
   setPostIdPublic,
 } from "../../../feature/reducers/appSlice";
-import { useNavigate } from "react-router-dom";
-import { MdOutlineWatchLater } from "react-icons/md";
 import {
   incrementPostsViewsApi,
   setPostId,
@@ -24,189 +21,113 @@ import {
   toggleLikePostApi,
 } from "../../../feature/reducers/postSlice";
 import { NotificationService } from "../../../services/notificationServices";
-import { IoEyeOutline } from "react-icons/io5";
 import { displayComments } from "../../../feature/reducers/commentSlice";
+
 interface IPostProps {
   posts: IPost[];
 }
+
 const TemplatePosts = ({ posts }: IPostProps) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  // Selektiere den aktuellen Dark-Mode-Status aus dem Redux-Store
-  const { isDarkMode } = useSelector((state: RootState) => state.app);
   const userId = localStorage.getItem("userId");
   const users = useSelector(displayUsers);
   const navigate = useNavigate();
   const comments = useSelector(displayComments);
 
+  const react = async (kind: "like" | "dislike", id: string) => {
+    try {
+      const action = kind === "like" ? toggleLikePostApi : toggleDisikePostApi;
+      await dispatch(action({ postIdPublic: id })).unwrap();
+    } catch (error: any) {
+      NotificationService.error(error.message);
+    }
+  };
+
+  const openPost = async (id: string) => {
+    await dispatch(incrementPostsViewsApi({ postIdPublic: id }));
+    dispatch(setPostId(id));
+    navigate(`/post/${id}`);
+  };
+
+  if (!posts.length) return <p className="muted py-10">{t("profile.noPosts")}</p>;
+
   return (
-    <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
       {posts.map((post) => {
-        const user = users.find((user) => user._id === post.user);
-        const isLikedPost = post.likes.toLocaleString().includes(userId!);
-        const isDislikedPost = post.disLikes.toLocaleString().includes(userId!);
+        const user = users.find((u) => u._id === post.user);
+        const liked = post.likes.toLocaleString().includes(userId!);
+        const disliked = post.disLikes.toLocaleString().includes(userId!);
+        const commentCount = comments.filter((c) => c.post === post?._id).length;
+        const own = post.user === userId;
         return (
-          <div
-            key={post._id}
-            className={`rounded-xl py-3 font-FONT_VIGA ${
-              // Dynamische Klasse für den Hintergrund basierend auf dem Dark-Mode-Status
-              isDarkMode ? "bg-SECONDARY_BLACK" : "bg-SECONDARY_WHITE"
-            }`}
-          >
-            <div className="flex justify-between items-center px-2">
-              <div
-                className="flex gap-2"
-                onClick={async () => {
-                  navigate(`/profile/${post.user}`);
-                }}
-              >
-                {/* Profilbild des Benutzers */}
-                <div>
-                  <img
-                    className="w-[50px] h-[50px] rounded-full cursor-pointer"
-                    src={user?.profile_photo}
-                    alt=""
-                  />
-                </div>
-                {/* Benutzername und Zeitstempel */}
-                <div className="flex flex-col justify-center">
-                  <p className=" cursor-pointer">{user?.firstName}</p>
-                  <div className="flex items-center gap-1 text-SECONDARY_GRAY text-xs">
-                    <MdOutlineWatchLater className=" text-xl sm:text-2xl" />
-                    <ShowTime timestamp={post?.updatedAt} />
-                  </div>
-                </div>
-              </div>
-              {/* Optionen-Menü */}
-              <div className="flex items-center text-2xl gap-2">
-                <CiEdit
-                  className=" cursor-pointer"
-                  onClick={() => {
-                    dispatch(setPostIdPublic(post._id));
-                    dispatch(setIsEditComponentActive(true));
-                    dispatch(setIsSpinnerActive(false));
-                  }}
-                />
-                <IoMdClose
-                  className=" cursor-pointer"
-                  onClick={() => {
-                    dispatch(setPostIdPublic(post._id));
-                    dispatch(setIsDeleteComponentActive(true));
-                    dispatch(setIsSpinnerActive(false));
-                  }}
-                />
-              </div>
-            </div>
-            {/* Beitragstext */}
-            <div className="px-3 py-2">
-              <p className="font-FONT_VIGA font-bold line-clamp-1">
-                {post?.title}
-              </p>
-            </div>
-            {/* Bild */}
-            <div
-              className="mx-3  overflow-hidden rounded-lg"
-              onClick={async () => {
-                await dispatch(
-                  incrementPostsViewsApi({ postIdPublic: post?._id })
-                );
-                dispatch(setPostId(post._id)), navigate(`/post/${post._id}`);
-              }}
-            >
-              <img
-                className="w-full   hover:scale-105 transition-all duration-500 cursor-pointer"
-                src={String(post?.image) || ""}
-                alt=""
-              />
-            </div>
-            <div className="py-4 px-3 border-b h-40">
-              <p>{post.description.slice(0, 200)}...</p>
-            </div>
-            {/* Interaktionsbereich */}
-            <div className="flex gap-6 items-center px-3 mt-2">
-              {/* Like- und Teilen-Buttons */}
-              <div className="flex items-center gap-2">
-                <BiSolidLike />
-                <p>{post.likes.length}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <BiDislike />
-                <p>{post.disLikes.length}</p>
-              </div>
-              <div className="flex gap-2">
-                <span className="flex items-center gap-2">
-                  <FaComment />
-                  <p>
-                    {
-                      comments.filter((comment) => comment.post === post?._id)
-                        .length
-                    }
-                  </p>
+          <article key={post._id} className="flex flex-col rounded-lg border border-[var(--line)] bg-[var(--surface)] overflow-hidden">
+            <div className="flex items-center justify-between gap-3 p-4">
+              <button type="button" className="flex items-center gap-3 min-w-0 text-left" onClick={() => navigate(`/profile/${post.user}`)}>
+                <img className="w-10 h-10 rounded-full object-cover flex-none" src={user?.profile_photo} alt="" />
+                <span className="min-w-0">
+                  <span className="block font-medium truncate">{user?.firstName}</span>
+                  <span className="block muted text-xs"><ShowTime timestamp={post?.updatedAt} /></span>
                 </span>
-              </div>
-              <div className="flex gap-2">
-                <span className="flex items-center gap-2">
-                  <IoEyeOutline />
-                  <p>{post.numViews}</p>
-                </span>
-              </div>
-            </div>
-            {/* Trennlinie */}
-            <div className="border border-b-1 border-gray-200 my-2 mx-3" />
-            {/* Like- und Kommentar-Buttons */}
-            <div>
-              <div className="flex justify-start gap-8 px-3 font-FONT_VIGA ">
-                <span
-                  className="flex items-center gap-2"
-                  onClick={async () => {
-                    try {
-                      await dispatch(
-                        toggleLikePostApi({ postIdPublic: post._id })
-                      ).unwrap();
-                    } catch (error: any) {
-                      NotificationService.error(error.message);
-                    }
-                  }}
-                >
-                  <BiLike
-                    className={`${
-                      isLikedPost && " text-PRIMARY_BLUE"
-                    } text-2xl cursor-pointer`}
-                  />
-                </span>
-                <span
-                  className="flex items-center gap-2"
-                  onClick={async () => {
-                    try {
-                      await dispatch(
-                        toggleDisikePostApi({ postIdPublic: post._id })
-                      ).unwrap();
-                    } catch (error: any) {
-                      NotificationService.error(error.message);
-                    }
-                  }}
-                >
-                  <BiDislike
-                    className={`${
-                      isDislikedPost && "text-PRIMARY_RED"
-                    } text-2xl  cursor-pointer`}
-                  />
-                </span>
-                <div className="flex items-center gap-2  hover:-scale-x-95 transition-all duration-500 text-xl sm:text-2xl cursor-pointer hover:text-SECONDARY_BLUE ">
-                  <FaRegComment
+              </button>
+              {own && (
+                <div className="flex gap-1 text-sm flex-none">
+                  <button
+                    type="button"
+                    className="px-2 py-1 rounded hover:bg-[var(--hover)]"
                     onClick={() => {
-                      navigate(`/post/${post?._id}`);
+                      dispatch(setPostIdPublic(post._id));
+                      dispatch(setIsEditComponentActive(true));
+                      dispatch(setIsSpinnerActive(false));
                     }}
-                    className="text-2xl  cursor-pointer hover:text-SECONDARY_BLUE"
-                  />
+                  >
+                    {t("profile.edit")}
+                  </button>
+                  <button
+                    type="button"
+                    className="px-2 py-1 rounded hover:bg-[var(--hover)] text-SECONDARY_RED"
+                    onClick={() => {
+                      dispatch(setPostIdPublic(post._id));
+                      dispatch(setIsDeleteComponentActive(true));
+                      dispatch(setIsSpinnerActive(false));
+                    }}
+                  >
+                    {t("profile.delete")}
+                  </button>
                 </div>
-              </div>
-              {/* Trennlinie */}
+              )}
             </div>
-            {/* Kommentarbereich */}
-          </div>
+
+            <button type="button" className="block aspect-[16/9] bg-[var(--hover)]" onClick={() => openPost(post._id)} aria-label={t("profile.openPost")}>
+              <img className="w-full h-full object-cover" src={String(post?.image) || ""} alt="" />
+            </button>
+
+            <div className="flex flex-col gap-2 p-4 flex-1">
+              <h3 className="text-2xl leading-tight line-clamp-2">{post?.title}</h3>
+              <p className="muted text-sm leading-6 line-clamp-3">{post.description}</p>
+            </div>
+
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--line)] text-sm">
+              <div className="flex items-center gap-5">
+                <button type="button" className={`flex items-center gap-1.5 ${liked ? "text-PRIMARY_BLUE" : "hover:text-PRIMARY_ORANGE"}`} onClick={() => react("like", post._id)} aria-label={t("profile.like")}>
+                  <BiLike className="text-xl" /> {post.likes.length}
+                </button>
+                <button type="button" className={`flex items-center gap-1.5 ${disliked ? "text-SECONDARY_RED" : "hover:text-PRIMARY_ORANGE"}`} onClick={() => react("dislike", post._id)} aria-label={t("profile.dislike")}>
+                  <BiDislike className="text-xl" /> {post.disLikes.length}
+                </button>
+                <button type="button" className="flex items-center gap-1.5 hover:text-PRIMARY_ORANGE" onClick={() => navigate(`/post/${post?._id}`)} aria-label={t("profile.comments")}>
+                  <FaRegComment className="text-lg" /> {commentCount}
+                </button>
+              </div>
+              <span className="flex items-center gap-1.5 muted" title={t("profile.views")}>
+                <IoEyeOutline className="text-lg" /> {post.numViews}
+              </span>
+            </div>
+          </article>
         );
       })}
     </div>
   );
 };
+
 export default TemplatePosts;

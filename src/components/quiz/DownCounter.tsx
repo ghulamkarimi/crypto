@@ -67,7 +67,7 @@ const DownCounter = () => {
     <div
       className={` w-fit font-FONT_VIGA text-sm md:text-xl py-2  px-4 rounded-lg shadow-lg  ${
         hours === 0 && minutes === 0 && seconds < 30
-          ? " bg-PRIMARY_RED animate-bounce"
+          ? " bg-PRIMARY_RED"
           : " bg-SECONDARY_BLUE"
       }`}
     >
