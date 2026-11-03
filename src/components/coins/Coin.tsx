@@ -9,7 +9,7 @@ import { useEffect, useRef } from "react";
 import Spinner from "../Spinner";
 
 const num = (v: number | null | undefined, max = 4) =>
-  typeof v === "number" ? v.toLocaleString(undefined, { maximumFractionDigits: max }) : "–";
+  typeof v === "number" ? v.toLocaleString(undefined, { maximumFractionDigits: max }) : "-";
 
 const Coin = () => {
   const { t } = useTranslation();
@@ -109,14 +109,16 @@ const Coin = () => {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-x-14 gap-y-10">
-        <div className="flex-[1_1_420px] min-w-0">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-14 gap-y-10">
+        <div className="min-w-0 flex flex-col">
           <h3 className="mb-4">{t("coinPage.chart")}</h3>
-          <div className="h-72 board !p-4">
-            <canvas ref={chartRef} id={`chart-${coin.id}`} />
+          <div className="board !p-4 !w-full !max-w-none flex-1 min-h-[320px]">
+            <div className="relative flex-1 min-h-[280px]">
+              <canvas ref={chartRef} id={`chart-${coin.id}`} />
+            </div>
           </div>
         </div>
-        <dl className="flex-[1_1_360px] min-w-0">
+        <dl className="min-w-0">
           <h3 className="mb-4">{t("coinPage.facts")}</h3>
           {rows.map(([label, value]) => (
             <div key={label} className="row-line flex justify-between gap-4 py-3">
